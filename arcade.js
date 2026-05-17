@@ -65,6 +65,8 @@
   var CSS = [
     "body.arcade-on .status{display:none!important;}",
     "body.arcade-on .scoreboard{display:none!important;}",
+    "body.arcade-on .arcade-link{display:none!important;}",
+    "body.arcade-on .top a.back{display:none!important;}",
     ".ac-hud{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;max-width:560px;}",
     ".ac-turn{display:flex;align-items:center;gap:14px;font-weight:900;letter-spacing:.04em;",
     "  font-size:clamp(20px,5.4vw,30px);padding:10px 22px;border-radius:16px;",
@@ -87,6 +89,9 @@
     ".ac-btn{font:inherit;font-weight:700;letter-spacing:.1em;font-size:12px;color:#9fb9d4;background:rgba(150,200,255,0.05);",
     "  border:1px solid rgba(160,210,255,0.16);padding:7px 14px;border-radius:999px;cursor:pointer;text-decoration:none;display:inline-block;}",
     ".ac-btn:hover{color:#dff1ff;border-color:rgba(120,220,255,.5);}",
+    ".ac-btn.ac-next{color:#04121c;background:linear-gradient(160deg,#bff6ff,#4ef0ff);border-color:transparent;font-weight:800;",
+    "  box-shadow:0 0 18px rgba(78,220,255,.45);animation:acpulse 1.2s ease-in-out infinite alternate;}",
+    ".ac-btn.ac-next:hover{filter:brightness(1.08);}",
     ".ac-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}",
     ".ac-modal{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;padding:20px;",
     "  background:rgba(4,6,14,.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}",
@@ -151,12 +156,18 @@
   function renderBar() {
     var p = players(), t = target();
     var fmt = t > 0 ? ("先取 " + t + " 勝") : "フリー対局";
+    var rem = "";
+    if (t > 0) {
+      var ra = Math.max(0, t - state.seriesA), rb = Math.max(0, t - state.seriesB);
+      rem = '<span class="fmt">あと ' + esc(p.p1) + ":" + ra + " / " + esc(p.p2) + ":" + rb + '</span>';
+    }
     state.barEl.innerHTML =
       '<span class="nm1">' + esc(p.p1) + '</span>' +
       '<span class="sc">' + state.seriesA + '</span><span>—</span><span class="sc">' + state.seriesB + '</span>' +
       '<span class="nm2">' + esc(p.p2) + '</span>' +
-      '<span class="fmt">' + fmt + '</span>';
+      '<span class="fmt">' + fmt + '</span>' + rem;
   }
+  function showNext(v) { if (state && state.nextEl) state.nextEl.style.display = v ? "" : "none"; }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]; }); }
 
   function setTurn(side, over) {
@@ -180,10 +191,17 @@
       var turn = el("div", "ac-turn s1"); turn.id = "acTurn";
       var bar = el("div", "ac-bar"); bar.id = "acBar";
       var actions = el("div", "ac-actions");
-      var rb = el("button", "ac-btn", "ルール"); rb.type = "button";
+      var nx = el("button", "ac-btn ac-next", "▶ もう一局"); nx.type = "button"; nx.style.display = "none";
+      nx.addEventListener("click", function () {
+        var rbtn = document.getElementById("btnReset");
+        if (rbtn) rbtn.click(); else location.reload();
+        nx.style.display = "none";
+      });
+      var rb = el("button", "ac-btn", "ルール (?)"); rb.type = "button";
       rb.addEventListener("click", function () { showRules(state.gameId); });
       var hb = el("a", "ac-btn", "‹ メニュー"); hb.href = "index.html";
-      actions.appendChild(rb); actions.appendChild(hb);
+      actions.appendChild(nx); actions.appendChild(rb); actions.appendChild(hb);
+      state.nextEl = nx;
       hud.appendChild(turn); hud.appendChild(bar); hud.appendChild(actions);
       state.hudEl = hud; state.turnEl = turn; state.barEl = bar;
       // body 先頭付近へ（最初の主要要素の前）
@@ -192,14 +210,27 @@
       else document.body.insertBefore(hud, document.body.firstChild);
       state.seriesA = 0; state.seriesB = 0; state.pendingReset = false;
       renderBar(); setTurn(1, false);
+      if (!API._keyBound) {
+        API._keyBound = true;
+        document.addEventListener("keydown", function (e) {
+          var tag = (e.target && e.target.tagName) || "";
+          if (tag === "INPUT" || tag === "TEXTAREA") return;
+          if (e.key === "?" || e.key === "h" || e.key === "H") {
+            var m = document.getElementById("acModal");
+            if (m && m.classList.contains("show")) hideRules();
+            else if (state) showRules(state.gameId);
+          }
+        });
+      }
       return API;
     },
     /* 各ゲームの新規対局開始時に呼ぶ：マッチ達成後ならシリーズを次マッチ用にリセット */
     gameStart: function () {
       if (state && state.pendingReset) { state.seriesA = 0; state.seriesB = 0; state.pendingReset = false; renderBar(); }
+      showNext(false);
     },
     /* render時：現手番を反映（side: 1|2、over:true で決着表示） */
-    turn: function (side, over) { if (state) setTurn(side, !!over); },
+    turn: function (side, over) { if (state) { setTurn(side, !!over); showNext(!!over); } },
     /* 1局の決着。winnerSide=1|2 → シリーズ加点しマッチ判定。返り値 {matchOver, who} */
     win: function (side) {
       if (!state) return { matchOver: false };
@@ -217,9 +248,10 @@
         setTimeout(function () { w.classList.remove("show"); }, 3600);
         state.pendingReset = true;   // 次の対局開始時にシリーズを新マッチ用へ
       }
+      showNext(true);
       return { matchOver: matchOver };
     },
-    draw: function () { /* 引き分けはシリーズ加点なし */ },
+    draw: function () { showNext(true); /* 引き分けはシリーズ加点なし */ },
     /* シリーズをリセット（新マッチ） */
     resetSeries: function () { if (state) { state.seriesA = 0; state.seriesB = 0; renderBar(); } },
     series: function () { return state ? { a: state.seriesA, b: state.seriesB } : { a: 0, b: 0 }; }
