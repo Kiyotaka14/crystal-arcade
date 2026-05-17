@@ -20,12 +20,12 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 26px;
     font-family: "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
     color: var(--ink);
     background: #05070f;
-    padding: 40px 24px;
+    padding: 32px 14px;
     position: relative;
     overflow-x: hidden;
   }
@@ -78,7 +78,7 @@
   }
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 320px));
+    grid-template-columns: repeat(auto-fit, minmax(min(260px, 88vw), 320px));
     gap: 20px;
     justify-content: center;
     width: 100%;

@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CRYSTAL PENTE — ペンテ（五目＋挟み取り）</title>
 <style>
-  :root{--cell:34px;--gap:2px;--cyan:#4ef0ff;--cyan-deep:#1186b8;--magenta:#c46bff;--magenta-deep:#7a2bd0;
+  :root{--cell:min(34px,6.4vw);--gap:2px;--cyan:#4ef0ff;--cyan-deep:#1186b8;--magenta:#c46bff;--magenta-deep:#7a2bd0;
     --glass:rgba(150,200,255,0.05);--glass-line:rgba(160,210,255,0.16);--ink:#dff1ff;}
   *{box-sizing:border-box;}
   html,body{height:100%;}
-  body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
     gap:14px;font-family:"Hiragino Sans","Yu Gothic",system-ui,sans-serif;color:var(--ink);background:#05070f;
-    padding:24px;position:relative;overflow:auto;}
+    padding:22px 8px;position:relative;overflow:auto;}
   body::before{content:"";position:fixed;inset:-25%;z-index:-2;
     background:radial-gradient(40% 38% at 22% 28%,rgba(40,180,255,0.20),transparent 60%),
       radial-gradient(42% 40% at 80% 70%,rgba(150,70,255,0.18),transparent 62%),

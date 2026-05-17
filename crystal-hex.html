@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CRYSTAL HEX — ヘックス（接続）</title>
 <style>
-  :root{--hx:34px;--cyan:#4ef0ff;--cyan-deep:#1186b8;--magenta:#c46bff;--magenta-deep:#7a2bd0;
+  :root{--hx:min(34px,5vw);--cyan:#4ef0ff;--cyan-deep:#1186b8;--magenta:#c46bff;--magenta-deep:#7a2bd0;
     --glass:rgba(150,200,255,0.05);--glass-line:rgba(160,210,255,0.16);--ink:#dff1ff;}
   *{box-sizing:border-box;}
   html,body{height:100%;}
-  body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
     gap:14px;font-family:"Hiragino Sans","Yu Gothic",system-ui,sans-serif;color:var(--ink);background:#05070f;
-    padding:24px;position:relative;overflow:auto;}
+    padding:22px 8px;position:relative;overflow:auto;}
   body::before{content:"";position:fixed;inset:-25%;z-index:-2;
     background:radial-gradient(40% 38% at 22% 28%,rgba(40,180,255,0.20),transparent 60%),
       radial-gradient(42% 40% at 80% 70%,rgba(150,70,255,0.18),transparent 62%),
@@ -31,7 +31,7 @@
   .turn-dot{width:18px;height:18px;clip-path:polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);}
   .turn-dot.C{background:linear-gradient(160deg,#d6fbff,var(--cyan) 45%,var(--cyan-deep));box-shadow:0 0 12px rgba(78,240,255,.7);}
   .turn-dot.M{background:linear-gradient(160deg,#f3e0ff,var(--magenta) 45%,var(--magenta-deep));box-shadow:0 0 12px rgba(196,107,255,.7);}
-  .legend{display:flex;gap:16px;font-size:12px;color:#8fb0ce;letter-spacing:.06em;}
+  .legend{display:block;max-width:460px;text-align:center;line-height:1.7;font-size:12px;color:#8fb0ce;letter-spacing:.04em;}
   .legend b{color:#cfe8ff;}
   .scoreboard{display:flex;gap:14px;font-size:14px;font-weight:700;letter-spacing:.1em;}
   .scoreboard .sc{padding:5px 14px;border-radius:999px;background:var(--glass);border:1px solid var(--glass-line);}
@@ -124,17 +124,25 @@ function sfxWin(c){try{const base=c==="C"?659.25:587.33;[0,4,7,12,16,19].forEach
 
 function build(){
   boardEl.innerHTML=""; cellEls.length=0;
+  const rowEls=[];
   for(let r=0;r<N;r++){
     const row=document.createElement("div"); row.className="hexrow";
-    row.style.marginLeft=(r*18)+"px";
     const arr=[];
     for(let c=0;c<N;c++){
       const h=document.createElement("div"); h.className="hx";
       h.addEventListener("click",()=>onClick(r,c));
       row.appendChild(h); arr.push(h);
     }
-    boardEl.appendChild(row); cellEls.push(arr);
+    boardEl.appendChild(row); cellEls.push(arr); rowEls.push(row);
   }
+  // 行オフセットを実セル幅に比例（レスポンシブ：--hx が vw で縮んでも崩れない）
+  const applyOffset=()=>{
+    const w=cellEls[0][0].getBoundingClientRect().width || 34;
+    rowEls.forEach((row,r)=>{ row.style.marginLeft=(r*w*0.5)+"px"; });
+  };
+  applyOffset();
+  requestAnimationFrame(applyOffset);
+  window.addEventListener("resize", applyOffset);
 }
 function init(){
   board=Array.from({length:N},()=>Array(N).fill(null));
