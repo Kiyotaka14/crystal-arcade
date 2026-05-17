@@ -450,6 +450,7 @@
     縦・横・斜めで4つ揃えたら勝ち。回転で両者同時に4連なら引き分け。
   </p>
 
+<script src="arcade.js"></script>
 <script>
 "use strict";
 
@@ -660,6 +661,7 @@ function renderScore() {
 function draw() {
   sfxDraw();
   showDrawBanner();
+  if (window.Arcade) Arcade.draw();
 }
 
 function pushHistory() {
@@ -683,6 +685,7 @@ function undo() {
 
 function win(color) {
   scores[color]++;
+  if (window.Arcade) Arcade.win(color === "R" ? 1 : 2);
   renderScore();
   const pill = document.querySelector(color === "R" ? ".scoreboard .sc-R" : ".scoreboard .sc-Y");
   if (pill) {
@@ -729,6 +732,7 @@ function init() {
   gameOver = false;
   animating = false;
   history = [];
+  if (window.Arcade) Arcade.gameStart();
   hideWinBanner();
   render();
 }
@@ -992,6 +996,7 @@ function render(winCells) {
     turnDotEl.className = "turn-dot " + current;
     turnDotEl.style.visibility = "visible";
   }
+  if (window.Arcade) Arcade.turn(current === "R" ? 1 : 2, gameOver);
   rotREl.textContent = rotationsLeft.R;
   rotYEl.textContent = rotationsLeft.Y;
   updateControls();
@@ -1064,6 +1069,7 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+if (window.Arcade) Arcade.init({ gameId: "crystal-spin" });
 buildGrid();
 init();
 applyModeUI();

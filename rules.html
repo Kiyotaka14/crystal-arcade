@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRYSTAL ARCADE — ルールブック</title>
+<style>
+  :root{--cyan:#4ef0ff;--magenta:#c46bff;--glass:rgba(150,200,255,0.05);--glass-line:rgba(160,210,255,0.16);--ink:#dff1ff;}
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+    gap:18px;font-family:"Hiragino Sans","Yu Gothic",system-ui,sans-serif;color:var(--ink);background:#05070f;
+    padding:28px 12px;position:relative;overflow-x:hidden;}
+  body::before{content:"";position:fixed;inset:-25%;z-index:-2;
+    background:radial-gradient(40% 38% at 22% 26%,rgba(40,180,255,0.18),transparent 60%),
+      radial-gradient(42% 40% at 80% 72%,rgba(150,70,255,0.16),transparent 62%),
+      radial-gradient(50% 50% at 50% 50%,rgba(10,16,40,0.9),#04050c 75%);animation:drift 24s ease-in-out infinite alternate;}
+  body::after{content:"";position:fixed;inset:0;z-index:-1;
+    background-image:linear-gradient(rgba(120,200,255,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(120,200,255,0.05) 1px,transparent 1px);
+    background-size:48px 48px;-webkit-mask-image:radial-gradient(circle at 50% 42%,#000 28%,transparent 80%);mask-image:radial-gradient(circle at 50% 42%,#000 28%,transparent 80%);}
+  @keyframes drift{0%{transform:translate3d(-3%,-2%,0) scale(1.05);}100%{transform:translate3d(3%,2%,0) scale(1.12);}}
+  .top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center;}
+  a.back{font-size:12px;font-weight:700;letter-spacing:.12em;text-decoration:none;color:#9fb9d4;
+    background:var(--glass);border:1px solid var(--glass-line);padding:8px 14px;border-radius:999px;}
+  a.back:hover{color:#dff1ff;border-color:rgba(120,220,255,.5);}
+  h1{margin:0;font-size:clamp(26px,6.5vw,40px);font-weight:800;letter-spacing:.28em;text-indent:.28em;
+    background:linear-gradient(95deg,var(--cyan),#b9e8ff 42%,var(--magenta));-webkit-background-clip:text;background-clip:text;
+    color:transparent;filter:drop-shadow(0 0 12px rgba(90,200,255,.4));}
+  .tag{font-size:12px;color:#8fb0ce;letter-spacing:.26em;}
+  .book{display:flex;flex-direction:column;gap:16px;width:100%;max-width:680px;}
+  .rule{border-radius:16px;padding:20px 22px;background:var(--glass);border:1px solid var(--glass-line);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+  .rule .hd{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;}
+  .rule h2{margin:0;font-size:20px;font-weight:900;letter-spacing:.12em;
+    background:linear-gradient(95deg,var(--cyan),#b9e8ff 45%,var(--magenta));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .rule .jp{color:#a9c4dd;font-size:13px;letter-spacing:.08em;}
+  .rule h3{font-size:12px;letter-spacing:.16em;color:#7fb6e6;margin:14px 0 4px;}
+  .rule ol,.rule ul{margin:0;padding-left:1.2em;line-height:1.8;font-size:13.5px;color:#cfe0f2;}
+  .rule li{margin:2px 0;}
+  .rule .play{display:inline-block;margin-top:14px;font-size:12px;font-weight:800;letter-spacing:.14em;color:#04121c;
+    background:linear-gradient(160deg,#bff6ff,var(--cyan));padding:8px 16px;border-radius:999px;text-decoration:none;}
+</style>
+</head>
+<body>
+  <div class="top">
+    <a class="back" href="index.html">‹ メニュー</a>
+    <h1>RULEBOOK</h1>
+  </div>
+  <div class="tag">9つの対戦頭脳ゲーム・ルールブック</div>
+  <div class="book" id="book"></div>
+<script src="arcade.js"></script>
+<script>
+  var book=document.getElementById("book");
+  Arcade.GAME_ORDER.forEach(function(id){
+    var r=Arcade.RULES[id]; if(!r) return;
+    var d=document.createElement("div"); d.className="rule";
+    d.innerHTML =
+      '<div class="hd"><h2>'+r.name+'</h2><span class="jp">'+r.jp+'</span></div>'+
+      '<h3>あそびかた</h3><ol>'+r.how.map(function(x){return '<li>'+x+'</li>';}).join("")+'</ol>'+
+      '<h3>そうさ</h3><ul>'+r.ctrl.map(function(x){return '<li>'+x+'</li>';}).join("")+'</ul>'+
+      '<a class="play" href="'+id+'.html">▶ あそぶ</a>';
+    book.appendChild(d);
+  });
+</script>
+</body>
+</html>

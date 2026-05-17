@@ -94,6 +94,7 @@
   </div>
   <div id="winBanner" class="win-banner" aria-hidden="true"></div>
 
+<script src="arcade.js"></script>
 <script>
 "use strict";
 const N=11;
@@ -148,6 +149,7 @@ function init(){
   board=Array.from({length:N},()=>Array(N).fill(null));
   current="C"; gameOver=false;
   if(!scores) scores={C:0,M:0};
+  if(window.Arcade) Arcade.gameStart();
   hideBanner(); render(null);
 }
 function inb(r,c){ return r>=0&&r<N&&c>=0&&c<N; }
@@ -182,6 +184,7 @@ function onClick(r,c){
 }
 function finishGame(winner,path){
   gameOver=true; scores[winner]++;
+  if(window.Arcade){ const s=winner==="C"?1:2; Arcade.turn(s,true); Arcade.win(s); }
   const who=winner==="C"?"蒼晶":"紫晶";
   statusEl.textContent=who+"の勝ち！"; turnDotEl.style.visibility="hidden";
   sfxWin(winner); showBanner(who,"勝ち",winner==="C"?"fx-C":"fx-M");
@@ -202,12 +205,14 @@ function render(winPath){
   if(!gameOver){
     statusEl.textContent=current==="C"?"蒼晶の番":"紫晶の番";
     turnDotEl.className="turn-dot "+current; turnDotEl.style.visibility="visible";
+    if(window.Arcade) Arcade.turn(current==="C"?1:2,false);
   }
   scCEl.textContent=scores.C; scMEl.textContent=scores.M;
 }
 btnReset.addEventListener("click",()=>{ msgEl.textContent="六角マスに結晶を置き、自分の2辺を繋いだ列を作れば勝ち（引き分け無し）。"; init(); });
 btnMute.addEventListener("click",()=>{ muted=!muted; btnMute.textContent=muted?"🔇":"🔊"; });
 document.addEventListener("keydown",(e)=>{const k=e.key.toLowerCase();if(k==="r")init();else if(k==="m"){muted=!muted;btnMute.textContent=muted?"🔇":"🔊";}});
+if(window.Arcade) Arcade.init({gameId:"crystal-hex"});
 build();
 init();
 </script>

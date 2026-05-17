@@ -81,6 +81,7 @@
   </div>
   <div id="winBanner" class="win-banner" aria-hidden="true"></div>
 
+<script src="arcade.js"></script>
 <script>
 "use strict";
 const N=6, NEED=5;
@@ -125,6 +126,7 @@ function init(){
   turn="O"; pickColor="C"; gameOver=false;
   if(!scores){ scores={S1:0,S2:0}; orderSeat="S1"; }
   else { orderSeat=otherSeat(orderSeat); }   // 毎局 担当交代
+  if(window.Arcade) Arcade.gameStart();
   setPick("C"); hideBanner(); render(null);
 }
 function inb(r,c){return r>=0&&r<N&&c>=0&&c<N;}
@@ -159,6 +161,7 @@ function finishGame(winner,cells){
   gameOver=true;
   const ws=roleSeat(winner);                 // 勝った役を担っていた席
   scores[ws]++;
+  if(window.Arcade){ const s=ws==="S1"?1:2; Arcade.turn(s,true); Arcade.win(s); }
   const roleJP = winner==="O"?"秩序":"混沌";
   statusEl.textContent = seatName(ws)+"の勝ち！（"+roleJP+"）";
   sfxWin(ws==="S1"?"C":"M");
@@ -181,6 +184,7 @@ function render(winCells){
   if(!gameOver){
     const ts=roleSeat(turn), roleJP=turn==="O"?"秩序":"混沌";
     statusEl.textContent = seatName(ts)+"（"+roleJP+"）の番";
+    if(window.Arcade) Arcade.turn(ts==="S1"?1:2,false);
   }
   const map = "この局: "+seatName(orderSeat)+"=秩序 / "+seatName(otherSeat(orderSeat))+"=混沌（毎局交代）";
   msgEl.textContent = gameOver
@@ -194,6 +198,7 @@ btnMute.addEventListener("click",()=>{ muted=!muted; btnMute.textContent=muted?"
 document.addEventListener("keydown",(e)=>{const k=e.key.toLowerCase();
   if(k==="r")init(); else if(k==="m"){muted=!muted;btnMute.textContent=muted?"🔇":"🔊";}
   else if(k==="1")setPick("C"); else if(k==="2")setPick("M");});
+if(window.Arcade) Arcade.init({gameId:"crystal-oc"});
 build();
 init();
 </script>

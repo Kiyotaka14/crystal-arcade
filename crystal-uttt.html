@@ -87,6 +87,7 @@
   </div>
   <div id="winBanner" class="win-banner" aria-hidden="true"></div>
 
+<script src="arcade.js"></script>
 <script>
 "use strict";
 const LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
@@ -137,6 +138,7 @@ function init(){
   cells=Array.from({length:9},()=>Array(9).fill(null));
   won=Array(9).fill(null);            // 'C' | 'M' | 'D' | null
   current="C"; forced=null; gameOver=false; last=null;
+  if(window.Arcade) Arcade.gameStart();
   hideBanner(); render();
 }
 function decided(b){ return won[b]!==null; }
@@ -167,6 +169,7 @@ function play(b,c){
 }
 function finishGame(metaWinner){
   gameOver=true;
+  if(window.Arcade){ if(metaWinner==="C"){Arcade.turn(1,true);Arcade.win(1);} else if(metaWinner==="M"){Arcade.turn(2,true);Arcade.win(2);} else {Arcade.turn(1,true);Arcade.draw();} }
   if(metaWinner){
     const who=metaWinner==="C"?"蒼晶":"紫晶";
     statusEl.textContent=who+"の勝ち！"; sfxWin(metaWinner);
@@ -202,6 +205,7 @@ function render(){
   if(!gameOver){
     statusEl.textContent = current==="C"?"蒼晶の番":"紫晶の番";
     turnDotEl.className="turn-dot "+current; turnDotEl.style.visibility="visible";
+    if(window.Arcade) Arcade.turn(current==="C"?1:2,false);
   }
   scCEl.textContent = won.filter(x=>x==="C").length;
   scMEl.textContent = won.filter(x=>x==="M").length;
@@ -211,6 +215,7 @@ btnReset.addEventListener("click",()=>{ msgEl.textContent="小盤で3つ並べ�
 btnMute.addEventListener("click",()=>{ muted=!muted; btnMute.textContent=muted?"🔇":"🔊"; });
 document.addEventListener("keydown",(e)=>{ const k=e.key.toLowerCase(); if(k==="r") init(); else if(k==="m"){ muted=!muted; btnMute.textContent=muted?"🔇":"🔊"; } });
 
+if(window.Arcade) Arcade.init({gameId:"crystal-uttt"});
 build();
 init();
 </script>
