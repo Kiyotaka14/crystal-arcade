@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRYSTAL ARCADE — 二人対戦・頭脳ゲーム集</title>
+<style>
+  :root {
+    --cyan: #4ef0ff;
+    --magenta: #c46bff;
+    --glass: rgba(150, 200, 255, 0.05);
+    --glass-line: rgba(160, 210, 255, 0.16);
+    --ink: #dff1ff;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 26px;
+    font-family: "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+    color: var(--ink);
+    background: #05070f;
+    padding: 40px 24px;
+    position: relative;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: -25%;
+    z-index: -2;
+    background:
+      radial-gradient(40% 38% at 22% 26%, rgba(40,180,255,0.20), transparent 60%),
+      radial-gradient(42% 40% at 80% 72%, rgba(150,70,255,0.18), transparent 62%),
+      radial-gradient(50% 50% at 50% 50%, rgba(10,16,40,0.9), #04050c 75%);
+    animation: drift 24s ease-in-out infinite alternate;
+  }
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image:
+      linear-gradient(rgba(120,200,255,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120,200,255,0.05) 1px, transparent 1px);
+    background-size: 48px 48px;
+    -webkit-mask-image: radial-gradient(circle at 50% 42%, #000 28%, transparent 80%);
+            mask-image: radial-gradient(circle at 50% 42%, #000 28%, transparent 80%);
+  }
+  @keyframes drift {
+    0%   { transform: translate3d(-3%, -2%, 0) scale(1.05); }
+    100% { transform: translate3d(3%, 2%, 0) scale(1.12); }
+  }
+  header { text-align: center; }
+  h1 {
+    margin: 0;
+    font-size: clamp(34px, 7vw, 56px);
+    font-weight: 800;
+    letter-spacing: .34em;
+    text-indent: .34em;
+    background: linear-gradient(95deg, var(--cyan), #b9e8ff 42%, var(--magenta));
+    -webkit-background-clip: text;
+            background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 16px rgba(90,200,255,.45));
+  }
+  .tagline {
+    margin: 10px 0 0;
+    font-size: 13px;
+    letter-spacing: .3em;
+    text-indent: .3em;
+    color: #8fb0ce;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 320px));
+    gap: 20px;
+    justify-content: center;
+    width: 100%;
+    max-width: 1080px;
+  }
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 24px;
+    border-radius: 18px;
+    background: var(--glass);
+    border: 1px solid var(--glass-line);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    text-decoration: none;
+    color: inherit;
+    transition: transform .16s, box-shadow .16s, border-color .16s;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(120,220,255,0.55);
+    box-shadow: 0 0 34px rgba(78,200,255,0.28), inset 0 0 18px rgba(78,200,255,0.08);
+  }
+  .ico {
+    width: 100%;
+    height: 110px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(150deg, rgba(20,40,80,0.55), rgba(40,20,70,0.55));
+    box-shadow: inset 0 0 30px rgba(8,14,30,0.85);
+  }
+  .gem {
+    width: 56px; height: 56px;
+    clip-path: polygon(50% 2%, 95% 26%, 95% 74%, 50% 98%, 5% 74%, 5% 26%);
+    background: radial-gradient(circle at 36% 28%, #eafdff, var(--cyan) 46%, #1186b8 100%);
+    box-shadow: 0 0 18px rgba(78,240,255,0.7);
+  }
+  .gem.v2 { background: radial-gradient(circle at 36% 28%, #f6e7ff, var(--magenta) 46%, #7a2bd0 100%); box-shadow: 0 0 18px rgba(196,107,255,0.7); }
+  .gem.v3 { background: radial-gradient(circle at 36% 28%, #eafff2, #4effa8 46%, #11b870 100%); box-shadow: 0 0 18px rgba(78,255,168,0.6); }
+  .gem.v4 { background: radial-gradient(circle at 36% 28%, #fff0e6, #ffae6b 46%, #d0631b 100%); box-shadow: 0 0 18px rgba(255,174,107,0.6); }
+  .gem.v5 { background: radial-gradient(circle at 36% 28%, #eafffb, #4ef0d0 46%, #119b86 100%); box-shadow: 0 0 18px rgba(78,240,208,0.6); }
+  .gem.v6 { background: radial-gradient(circle at 36% 28%, #fff0f6, #ff7eb6 46%, #c81e63 100%); box-shadow: 0 0 18px rgba(255,126,182,0.55); }
+  .gem.v7 { background: radial-gradient(circle at 36% 28%, #fdf6e3, #ffd24e 46%, #c79200 100%); box-shadow: 0 0 18px rgba(255,210,78,0.55); }
+  .gem.v8 { background: radial-gradient(circle at 36% 28%, #f3eaff, #9d7bff 46%, #4a2bb0 100%); box-shadow: 0 0 18px rgba(157,123,255,0.55); }
+  .gem.v9 { background: radial-gradient(circle at 36% 28%, #e7fff4, #34e0b0 46%, #0b8f74 100%); box-shadow: 0 0 18px rgba(52,224,176,0.55); }
+  .card h2 {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: .14em;
+  }
+  .card .jp { font-size: 13px; color: #a9c4dd; letter-spacing: .06em; }
+  .card .desc { font-size: 12.5px; color: #7f9bb6; line-height: 1.7; }
+  .card .play {
+    margin-top: auto;
+    align-self: flex-start;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .14em;
+    color: #04121c;
+    background: linear-gradient(160deg, #bff6ff, var(--cyan));
+    padding: 8px 16px;
+    border-radius: 999px;
+  }
+  footer { font-size: 12px; color: #61748c; letter-spacing: .14em; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>CRYSTAL ARCADE</h1>
+    <p class="tagline">二人で遊ぶ・頭を使う対戦ゲーム集</p>
+  </header>
+
+  <main class="grid" id="grid">
+    <a class="card" href="crystal-spin.html">
+      <div class="ico"><div class="gem"></div></div>
+      <h2>CRYSTAL SPIN</h2>
+      <div class="jp">コネクトフォー ＋ 盤回転</div>
+      <div class="desc">縦横斜めで揃える定番に「盤90°回転」のひねり。盤回転 / 通常 / 5目並べの3モード。</div>
+      <span class="play">PLAY ▶</span>
+    </a>
+
+    <a class="card" href="crystal-reversi.html">
+      <div class="ico"><div class="gem v2"></div></div>
+      <h2>CRYSTAL REVERSI</h2>
+      <div class="jp">オセロ（リバーシ）</div>
+      <div class="desc">挟んで裏返す定番。合法手ヒント・自動パス・最終石数で勝敗。8×8の陣取り頭脳戦。</div>
+      <span class="play">PLAY ▶</span>
+    </a>
+
+    <a class="card" href="crystal-uttt.html">
+      <div class="ico"><div class="gem v3"></div></div>
+      <h2>CRYSTAL UTTT</h2>
+      <div class="jp">アルティメット○×</div>
+      <div class="desc">9つの小盤の○×。打った位置が相手の次の盤を指定。小盤3つ揃えて勝つ超戦略級。</div>
+      <span class="play">PLAY ▶</span>
+    </a>
+
+    <a class="card" href="crystal-gomoku.html">
+      <div class="ico"><div class="gem v4"></div></div>
+      <h2>CRYSTAL GOMOKU</h2>
+      <div class="jp">五目並べ</div>
+      <div class="desc">15×15に自由配置。縦横斜めで先に5つ並べたら勝ち。読み合いの定番頭脳戦。</div>
+      <span class="play">PLAY ▶</span>
+    </a>
+
+    <a class="card" href="crystal-dots.html">
+      <div class="ico"><div class="gem v5"></div></div>
+      <h2>CRYSTAL DOTS</h2>
+      <div class="jp">ドット＆ボックス（4×4）</div>
+      <div class="desc">線で四辺を閉じマス獲得＝連続手番。「3辺＝危険マス」を可視化し、鎖を読む戦術が見える運要素なしの陣取り。</div>
+      <span class="play">PLAY ▶</span>
+    </a>
+
+    <a class="card" href="crystal-nim.html">
+      <div class="ico"><div class="gem v6"></div></div>
+      <h2>CRYSTAL WYTHOFF</h2>
+      <div class="jp">ウィトフのゲーム</div>
+      <div class="desc">2山から片方を任意 or 両山から同数取る。最後を取れば勝ち。必勝形が黄金比ベースで非自明＝読み応えあり。</div>
+      <span class="play">PLAY ▶</span>
+    </a>
+
+    <a class="card" href="crystal-hex.html">
+      <div class="ico"><div class="gem v7"></div></div>
+      <h2>CRYSTAL HEX</h2>
+      <div class="jp">ヘックス（接続）</div>
+      <div class="desc">六角盤で自分の対辺どうしを繋いだら勝ち。引き分け無しの純粋接続戦略ゲーム。</div>
+      <span class="play">PLAY ▶</span>
+    </a>
+
+    <a class="card" href="crystal-oc.html">
+      <div class="ico"><div class="gem v8"></div></div>
+      <h2>ORDER &amp; CHAOS</h2>
+      <div class="jp">秩序と混沌</div>
+      <div class="desc">秩序はちょうど5連、混沌は阻止して盤を埋める非対称戦。担当を毎局交代＆席別スコアでマッチを公平化。</div>
+      <span class="play">PLAY ▶</span>
+    </a>
+
+    <a class="card" href="crystal-pente.html">
+      <div class="ico"><div class="gem v9"></div></div>
+      <h2>CRYSTAL PENTE</h2>
+      <div class="jp">ペンテ（五目＋挟み取り）</div>
+      <div class="desc">五目並べに挟み取りを追加。5連、または相手ペアを5組捕獲で勝ち。攻防が激しい発展型。</div>
+      <span class="play">PLAY ▶</span>
+    </a>
+  </main>
+
+  <footer>2P HOT-SEAT · CRYSTAL THEME</footer>
+</body>
+</html>

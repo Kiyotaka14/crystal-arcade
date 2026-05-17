@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRYSTAL SPIN — コネクトフォー</title>
+<style>
+  :root {
+    --cell: 64px;
+    --gap: 9px;
+    /* 蒼晶 = アイスシアン / 紫晶 = アメジスト */
+    --cyan: #4ef0ff;
+    --cyan-deep: #1186b8;
+    --magenta: #c46bff;
+    --magenta-deep: #7a2bd0;
+    --glass: rgba(150, 200, 255, 0.05);
+    --glass-line: rgba(160, 210, 255, 0.16);
+    --ink: #dff1ff;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    font-family: "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+    color: var(--ink);
+    background: #05070f;
+    padding: 28px;
+    overflow-x: hidden;
+    position: relative;
+  }
+  /* 近未来アンビエント: ドリフトするオーロラ */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: -25%;
+    z-index: -2;
+    background:
+      radial-gradient(40% 38% at 22% 28%, rgba(40,180,255,0.22), transparent 60%),
+      radial-gradient(42% 40% at 80% 70%, rgba(150,70,255,0.20), transparent 62%),
+      radial-gradient(50% 50% at 50% 50%, rgba(10,16,40,0.9), #04050c 75%);
+    animation: drift 22s ease-in-out infinite alternate;
+  }
+  /* 結晶格子グリッド */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image:
+      linear-gradient(rgba(120,200,255,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120,200,255,0.06) 1px, transparent 1px);
+    background-size: 46px 46px;
+    -webkit-mask-image: radial-gradient(circle at 50% 45%, #000 30%, transparent 78%);
+            mask-image: radial-gradient(circle at 50% 45%, #000 30%, transparent 78%);
+  }
+  @keyframes drift {
+    0%   { transform: translate3d(-3%, -2%, 0) scale(1.05); }
+    100% { transform: translate3d(3%, 2%, 0) scale(1.12); }
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: .42em;
+    text-indent: .42em;
+    background: linear-gradient(95deg, var(--cyan), #b9e8ff 40%, var(--magenta));
+    -webkit-background-clip: text;
+            background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 14px rgba(90,200,255,.45));
+  }
+  .subtitle {
+    margin: -8px 0 0;
+    font-size: 12px;
+    letter-spacing: .34em;
+    text-indent: .34em;
+    color: #7fa6c8;
+  }
+
+  .modes { display: flex; gap: 10px; }
+  .mode-btn {
+    font: inherit;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: .1em;
+    color: #9fb9d4;
+    background: var(--glass);
+    border: 1px solid var(--glass-line);
+    padding: 9px 18px;
+    border-radius: 999px;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: color .18s, background .18s, border-color .18s, box-shadow .18s;
+  }
+  .mode-btn:hover:not(.active):not(:disabled) {
+    color: #dff1ff;
+    border-color: rgba(120,220,255,0.5);
+  }
+  .mode-btn.active {
+    color: #04121c;
+    background: linear-gradient(160deg, #bff6ff, var(--cyan));
+    border-color: transparent;
+    box-shadow: 0 0 18px rgba(78,220,255,0.5);
+  }
+  .mode-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    min-height: 30px;
+    text-shadow: 0 0 12px rgba(120,200,255,.35);
+  }
+  .turn-dot {
+    width: 22px; height: 22px;
+    clip-path: polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);
+  }
+  .turn-dot.R { background: linear-gradient(160deg, #d6fbff, var(--cyan) 45%, var(--cyan-deep));
+    box-shadow: 0 0 14px rgba(78,240,255,.7); }
+  .turn-dot.Y { background: linear-gradient(160deg, #f3e0ff, var(--magenta) 45%, var(--magenta-deep));
+    box-shadow: 0 0 14px rgba(196,107,255,.7); }
+
+  .rotations {
+    display: flex;
+    gap: 14px;
+    font-size: 13px;
+    letter-spacing: .08em;
+  }
+  .rotations span {
+    padding: 7px 16px;
+    border-radius: 999px;
+    background: var(--glass);
+    border: 1px solid var(--glass-line);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #a9c4dd;
+  }
+  .rotations b { color: #fff; font-size: 15px; }
+
+  .board-wrap {
+    position: relative;
+    padding: 14px;
+    border-radius: 22px;
+    background: linear-gradient(150deg, rgba(80,160,255,0.10), rgba(150,80,255,0.08));
+    border: 1px solid rgba(150,210,255,0.20);
+    box-shadow:
+      0 0 50px rgba(60,150,255,0.22),
+      0 0 90px rgba(150,80,255,0.14),
+      inset 0 1px 0 rgba(255,255,255,0.10);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  .board {
+    display: grid;
+    grid-template-columns: repeat(7, var(--cell));
+    grid-template-rows: repeat(7, var(--cell));
+    gap: var(--gap);
+    padding: var(--gap);
+    border-radius: 14px;
+    background:
+      linear-gradient(135deg, rgba(20,40,80,0.55), rgba(40,20,70,0.55)),
+      repeating-linear-gradient(60deg, rgba(255,255,255,0.025) 0 2px, transparent 2px 22px);
+    box-shadow: inset 0 0 40px rgba(8,14,30,0.9);
+    /* SPIN_MS=550 と一致させること（JS 依存） */
+    transition: transform .55s cubic-bezier(.45,.05,.25,1);
+    transform-origin: center;
+  }
+  .cell {
+    width: var(--cell);
+    height: var(--cell);
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 38% 34%, rgba(120,170,230,0.10), transparent 55%),
+      #0a1226;
+    box-shadow:
+      inset 0 0 0 1px rgba(150,200,255,0.10),
+      inset 0 6px 14px rgba(0,0,0,0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+  }
+  /* 結晶（駒）: 六角ファセット + 屈折ハイライト */
+  .disc {
+    width: 80%;
+    height: 80%;
+    position: relative;
+    clip-path: polygon(50% 2%, 95% 26%, 95% 74%, 50% 98%, 5% 74%, 5% 26%);
+    transform: scale(0);
+    transition: transform .2s cubic-bezier(.34,1.56,.64,1);
+  }
+  .disc.show { transform: scale(1); }
+  /* 回転の再描画中はポップ用トランジションを止め、ブロックが一瞬消えないようにする */
+  .board.no-pop .disc { transition: none; }
+  .disc::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    clip-path: inherit;
+  }
+  .disc::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    clip-path: inherit;
+    background: linear-gradient(150deg, rgba(255,255,255,0.85) 0 14%, transparent 38%);
+    mix-blend-mode: screen;
+    opacity: .55;
+  }
+  .disc.R::before {
+    background:
+      radial-gradient(circle at 36% 28%, #eafdff, var(--cyan) 46%, var(--cyan-deep) 100%),
+      conic-gradient(from 210deg, rgba(255,255,255,0.10), transparent 30%, rgba(255,255,255,0.18) 60%, transparent 80%);
+    box-shadow: 0 0 16px rgba(78,240,255,0.75), inset 0 0 14px rgba(255,255,255,0.35);
+  }
+  .disc.Y::before {
+    background:
+      radial-gradient(circle at 36% 28%, #f6e7ff, var(--magenta) 46%, var(--magenta-deep) 100%),
+      conic-gradient(from 210deg, rgba(255,255,255,0.10), transparent 30%, rgba(255,255,255,0.18) 60%, transparent 80%);
+    box-shadow: 0 0 16px rgba(196,107,255,0.75), inset 0 0 14px rgba(255,255,255,0.35);
+  }
+  .cell.preview .disc {
+    transform: scale(0.96);
+    opacity: .32;
+    filter: saturate(.8);
+  }
+  .cell.win .disc {
+    animation: crystal-pulse 0.9s ease-in-out infinite alternate;
+  }
+  @keyframes crystal-pulse {
+    from { filter: brightness(1);   transform: scale(1); }
+    to   { filter: brightness(1.7) drop-shadow(0 0 16px #fff); transform: scale(1.08); }
+  }
+
+  /* 勝利エフェクト: クリスタル・シャード飛散 + フラッシュ */
+  .fx-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 60;
+    overflow: hidden;
+  }
+  .fx-flash {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    animation: fx-flash .75s ease-out forwards;
+  }
+  .fx-flash.fx-R { background: radial-gradient(circle at 50% 44%, rgba(78,240,255,0.40), transparent 62%); }
+  .fx-flash.fx-Y { background: radial-gradient(circle at 50% 44%, rgba(196,107,255,0.40), transparent 62%); }
+  @keyframes fx-flash { 0% { opacity: 0; } 22% { opacity: 1; } 100% { opacity: 0; } }
+  .shard {
+    position: absolute;
+    clip-path: polygon(50% 0, 100% 38%, 82% 100%, 18% 100%, 0 38%);
+    opacity: 0;
+    will-change: transform, opacity;
+    animation: shard-fly 1.55s cubic-bezier(.15,.6,.3,1) forwards;
+  }
+  .shard.fx-R { background: linear-gradient(160deg, #eafdff, var(--cyan)); box-shadow: 0 0 10px rgba(78,240,255,0.85); }
+  .shard.fx-Y { background: linear-gradient(160deg, #f6e7ff, var(--magenta)); box-shadow: 0 0 10px rgba(196,107,255,0.85); }
+  @keyframes shard-fly {
+    0%   { transform: translate(-50%,-50%) rotate(0) scale(.35); opacity: 0; }
+    14%  { opacity: 1; }
+    100% { transform: translate(-50%,-50%) translate(var(--dx),var(--dy)) rotate(var(--rot)) scale(1); opacity: 0; }
+  }
+
+  /* 大きな勝利表示 */
+  .win-banner {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    pointer-events: none;
+    z-index: 70;
+    opacity: 0;
+    visibility: hidden;
+  }
+  .win-banner.show {
+    visibility: visible;
+    animation: winpop .55s cubic-bezier(.2,1.5,.35,1) forwards;
+  }
+  .win-banner .who {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: .34em;
+    text-indent: .34em;
+    color: #d6ecff;
+    text-shadow: 0 0 16px rgba(120,200,255,.5);
+  }
+  .win-banner .big {
+    font-size: clamp(72px, 17vw, 150px);
+    font-weight: 900;
+    letter-spacing: .04em;
+    line-height: 1;
+    /* background-image (longhand) を使うこと: background 短縮形は background-clip をリセットする */
+    -webkit-background-clip: text;
+            background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+  }
+  .win-banner.fx-R .big {
+    background-image: linear-gradient(160deg, #f2feff, var(--cyan) 55%, #7fe6ff);
+    filter: drop-shadow(0 0 28px rgba(78,240,255,.75));
+  }
+  .win-banner.fx-Y .big {
+    background-image: linear-gradient(160deg, #faf0ff, var(--magenta) 55%, #dba6ff);
+    filter: drop-shadow(0 0 28px rgba(196,107,255,.75));
+  }
+  .win-banner.show .big { animation: bigpulse 1.5s ease-in-out .55s infinite alternate; }
+  @keyframes winpop {
+    0%   { opacity: 0; transform: scale(.55); }
+    65%  { opacity: 1; }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes bigpulse { from { transform: scale(1); } to { transform: scale(1.05); } }
+
+  .win-banner.fx-D .big {
+    background-image: linear-gradient(160deg, #eaf3fb, #a9c0d8 55%, #d2e2f1);
+    filter: drop-shadow(0 0 24px rgba(170,205,235,.6));
+  }
+  .scoreboard {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: .12em;
+  }
+  .scoreboard .sc {
+    padding: 6px 16px;
+    border-radius: 999px;
+    background: var(--glass);
+    border: 1px solid var(--glass-line);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .scoreboard .sc-R { color: #bff4ff; box-shadow: 0 0 14px rgba(78,240,255,.18) inset; }
+  .scoreboard .sc-Y { color: #e6c9ff; box-shadow: 0 0 14px rgba(196,107,255,.18) inset; }
+  .scoreboard .sc b { color: #fff; font-size: 18px; }
+  .scoreboard .sc-sep { color: #5f7088; }
+  .scoreboard .sc.bump { animation: scbump .65s cubic-bezier(.2,1.4,.4,1); }
+  @keyframes scbump {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(1.22); filter: brightness(1.6); }
+    100% { transform: scale(1); }
+  }
+
+  .arcade-link {
+    position: fixed; top: 16px; left: 16px; z-index: 50;
+    font-size: 12px; font-weight: 700; letter-spacing: .12em; text-decoration: none;
+    color: #9fb9d4; background: rgba(150,200,255,0.05); border: 1px solid rgba(160,210,255,0.16);
+    padding: 8px 14px; border-radius: 999px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  .arcade-link:hover { color: #dff1ff; border-color: rgba(120,220,255,.5); }
+
+  .controls { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  button.act {
+    font: inherit;
+    font-weight: 700;
+    letter-spacing: .12em;
+    color: var(--ink);
+    background: var(--glass);
+    border: 1px solid var(--glass-line);
+    padding: 11px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: box-shadow .18s, border-color .18s, transform .05s, background .18s;
+  }
+  button.act:hover:not(:disabled) {
+    border-color: rgba(120,220,255,0.6);
+    box-shadow: 0 0 18px rgba(78,200,255,0.4), inset 0 0 12px rgba(78,200,255,0.15);
+  }
+  button.act:active:not(:disabled) { transform: translateY(1px); }
+  button.act:disabled { opacity: .32; cursor: not-allowed; }
+  button.reset { border-color: rgba(150,120,255,0.45); }
+  button.reset:hover:not(:disabled) {
+    border-color: rgba(196,140,255,0.7);
+    box-shadow: 0 0 18px rgba(170,110,255,0.45), inset 0 0 12px rgba(170,110,255,0.18);
+  }
+  .hint {
+    font-size: 12.5px;
+    color: #7f9bb6;
+    max-width: 540px;
+    text-align: center;
+    line-height: 1.7;
+    letter-spacing: .04em;
+  }
+</style>
+</head>
+<body>
+  <a class="arcade-link" href="index.html">‹ ARCADE</a>
+  <h1>CRYSTAL SPIN</h1>
+  <p id="subtitle" class="subtitle">コネクトフォー — 盤回転</p>
+
+  <div class="modes">
+    <button id="modeSpin" type="button" class="mode-btn active">盤回転ルール</button>
+    <button id="modeNormal" type="button" class="mode-btn">通常ルール</button>
+    <button id="modeC5" type="button" class="mode-btn">5目並べ</button>
+  </div>
+
+  <div class="status">
+    <span id="statusText">蒼晶の番</span>
+    <span id="turnDot" class="turn-dot R"></span>
+  </div>
+
+  <div class="scoreboard" id="scoreboard">
+    <span class="sc sc-R">蒼晶 <b id="scoreR">0</b></span>
+    <span class="sc-sep">—</span>
+    <span class="sc sc-Y"><b id="scoreY">0</b> 紫晶</span>
+  </div>
+
+  <div class="rotations" id="rotations">
+    <span>蒼晶 回転残り: <b id="rotR">2</b></span>
+    <span>紫晶 回転残り: <b id="rotY">2</b></span>
+  </div>
+
+  <div class="board-wrap">
+    <div id="board" class="board"></div>
+  </div>
+
+  <div id="winBanner" class="win-banner" aria-hidden="true"></div>
+
+  <div class="controls">
+    <button id="btnLeft" type="button" class="act">⟲ 左回転</button>
+    <button id="btnRight" type="button" class="act">⟳ 右回転</button>
+    <button id="btnUndo" type="button" class="act">↶ 待った</button>
+    <button id="btnReset" type="button" class="act reset">RESET</button>
+    <button id="btnMute" type="button" class="act" aria-label="サウンド切替">🔊</button>
+  </div>
+
+  <p id="hint" class="hint">
+    列をクリックで結晶を落下。手番の代わりに盤を90°回転でき（各自2回まで）、回転後は全結晶が落ち直します。
+    縦・横・斜めで4つ揃えたら勝ち。回転で両者同時に4連なら引き分け。
+  </p>
+
+<script>
+"use strict";
+
+const MODES = {
+  spin: {
+    rows: 7, cols: 7, rotation: true, connect: 4,
+    sub: "コネクトフォー — 盤回転",
+    hint: "列をクリックで結晶を落下。手番の代わりに盤を90°回転でき（各自2回まで）、回転後は全結晶が落ち直します。縦・横・斜めで4つ揃えたら勝ち。回転で両者同時に4連なら引き分け。 ⌨ 1〜7=落下 / Q・E=回転 / R=リセット / U=待った / M=消音",
+  },
+  normal: {
+    rows: 6, cols: 7, rotation: false, connect: 4,
+    sub: "コネクトフォー — 通常",
+    hint: "列をクリックで結晶を落下。縦・横・斜めで先に4つ揃えた方が勝ち。盤面が埋まって誰も揃わなければ引き分け。 ⌨ 1〜7=落下 / R=リセット / U=待った / M=消音",
+  },
+  connect5: {
+    rows: 7, cols: 8, rotation: false, connect: 5,
+    sub: "コネクト5 — 5目並べ",
+    hint: "列をクリックで結晶を落下。縦・横・斜めで先に5つ揃えた方が勝ち。盤面が埋まって誰も揃わなければ引き分け。 ⌨ 1〜8=落下 / R=リセット / U=待った / M=消音",
+  },
+};
+let CONNECT = 4;   // 実際の値は buildGrid() で MODES[mode].connect から設定
+const ROTATIONS_PER_PLAYER = 2;
+const SPIN_MS = 550;  // CSS の .board transition と一致させる
+
+let mode = "spin";
+let ROWS = MODES[mode].rows;
+let COLS = MODES[mode].cols;
+let board, current, rotationsLeft, gameOver, animating;
+
+const boardEl     = document.getElementById("board");
+const statusEl    = document.getElementById("statusText");
+const turnDotEl   = document.getElementById("turnDot");
+const rotREl      = document.getElementById("rotR");
+const rotYEl      = document.getElementById("rotY");
+const rotationsEl = document.getElementById("rotations");
+const subtitleEl  = document.getElementById("subtitle");
+const hintEl      = document.getElementById("hint");
+const winBannerEl = document.getElementById("winBanner");
+const btnLeft     = document.getElementById("btnLeft");
+const btnRight    = document.getElementById("btnRight");
+const btnReset    = document.getElementById("btnReset");
+const btnUndo     = document.getElementById("btnUndo");
+const modeSpinBtn   = document.getElementById("modeSpin");
+const modeNormalBtn = document.getElementById("modeNormal");
+const modeC5Btn     = document.getElementById("modeC5");
+const scoreREl    = document.getElementById("scoreR");
+const scoreYEl    = document.getElementById("scoreY");
+const btnMute     = document.getElementById("btnMute");
+
+let scores = { R: 0, Y: 0 };
+let muted = false;
+let history = [];          // 着手・回転の直前状態スナップショット（待った用）
+
+const cellEls = [];
+
+// ===== サウンド（Web Audio で合成・外部ファイル不要） =====
+let audioCtx = null;
+function getCtx() {
+  try {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      audioCtx = new AC();
+    }
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+  } catch (e) { return null; }
+}
+// 水晶の澄んだ音 = 純正弦の倍音加算ベル（非整数倍音 + 微デチューン + なめらかな指数減衰）
+function bell(freq, dur, gain, when) {
+  if (muted) return;
+  const ctx = getCtx();
+  if (!ctx) return;
+  const t0 = ctx.currentTime + (when || 0);
+  const out = ctx.createGain();
+  out.gain.value = gain;
+  out.connect(ctx.destination);
+  // [倍率, 音量比, 減衰比] ガラス／クリスタル特有の倍音
+  const partials = [
+    [1.00, 1.00, 1.00],
+    [2.00, 0.46, 0.72],
+    [2.76, 0.30, 0.55],
+    [3.76, 0.18, 0.42],
+    [5.40, 0.11, 0.30],
+  ];
+  for (const [ratio, vol, dd] of partials) {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = freq * ratio;
+    osc.detune.value = Math.random() * 6 - 3;
+    const pd = Math.max(0.08, dur * dd);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + pd);
+    osc.connect(g).connect(out);
+    osc.start(t0);
+    osc.stop(t0 + pd + 0.05);
+  }
+}
+function glide(f0, f1, dur, gain, when) {
+  if (muted) return;
+  const ctx = getCtx();
+  if (!ctx) return;
+  const t0 = ctx.currentTime + (when || 0);
+  const osc = ctx.createOscillator();
+  const g = ctx.createGain();
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(f0, t0);
+  osc.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(gain, t0 + 0.03);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  osc.connect(g).connect(ctx.destination);
+  osc.start(t0);
+  osc.stop(t0 + dur + 0.03);
+}
+function sfxDrop() {
+  try {
+    // 着地: 澄んだ水晶のチン（高音ベル + 1オクターブ上のきらめき）
+    bell(1318.51, 0.95, 0.16, 0);
+    bell(1975.53, 0.55, 0.06, 0.004);
+  } catch (e) {}
+}
+function sfxRotate() {
+  try {
+    const d = SPIN_MS / 1000;
+    // 澄んだ上昇シマー + 着地のきらめき
+    glide(523.25, 1244.51, d * 0.92, 0.075, 0);
+    glide(783.99, 1864.66, d * 0.92, 0.045, 0.02);
+    bell(1567.98, 0.7, 0.10, d * 0.86);
+  } catch (e) {}
+}
+function sfxWin(color) {
+  try {
+    const base = color === "R" ? 659.25 : 587.33; // E5 / D5
+    [0, 4, 7, 12, 16, 19].forEach((s, i) => {
+      bell(base * Math.pow(2, s / 12), 1.9 - i * 0.12, 0.15, i * 0.10);
+    });
+    bell(base * 2, 2.6, 0.09, 0.64); // 余韻のきらめき
+  } catch (e) {}
+}
+
+// ===== 勝利エフェクト: クリスタル・シャード飛散 + フラッシュ =====
+function celebrate(color) {
+  try {
+    const rect = boardEl.getBoundingClientRect();
+    const layer = document.createElement("div");
+    layer.className = "fx-layer";
+    document.body.appendChild(layer);
+
+    const flash = document.createElement("div");
+    flash.className = "fx-flash " + (color === "R" ? "fx-R" : "fx-Y");
+    layer.appendChild(flash);
+
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const spread = Math.min(rect.width, 380);
+    for (let i = 0; i < 48; i++) {
+      const sh = document.createElement("div");
+      sh.className = "shard " + (color === "R" ? "fx-R" : "fx-Y");
+      const ang = Math.random() * Math.PI * 2;
+      const dist = 120 + Math.random() * spread;
+      const sz = 8 + Math.random() * 14;
+      sh.style.left = cx + "px";
+      sh.style.top = cy + "px";
+      sh.style.width = sz + "px";
+      sh.style.height = sz + "px";
+      sh.style.setProperty("--dx", Math.cos(ang) * dist + "px");
+      sh.style.setProperty("--dy", (Math.sin(ang) * dist - 40) + "px");
+      sh.style.setProperty("--rot", (Math.random() * 720 - 360) + "deg");
+      sh.style.animationDelay = (Math.random() * 0.12) + "s";
+      layer.appendChild(sh);
+    }
+    setTimeout(() => layer.remove(), 1900);
+  } catch (e) {}
+}
+
+function showWinBanner(color) {
+  const name = color === "R" ? "蒼晶" : "紫晶";
+  winBannerEl.innerHTML =
+    '<div class="who">' + name + '</div><div class="big">勝ち</div>';
+  winBannerEl.classList.remove("fx-R", "fx-Y", "show");
+  void winBannerEl.offsetWidth;          // アニメ再トリガのためリフロー
+  winBannerEl.classList.add(color === "R" ? "fx-R" : "fx-Y", "show");
+}
+function showDrawBanner() {
+  winBannerEl.innerHTML =
+    '<div class="who">DRAW</div><div class="big">引き分け</div>';
+  winBannerEl.classList.remove("fx-R", "fx-Y", "fx-D", "show");
+  void winBannerEl.offsetWidth;
+  winBannerEl.classList.add("fx-D", "show");
+}
+function hideWinBanner() {
+  winBannerEl.classList.remove("show", "fx-R", "fx-Y", "fx-D");
+}
+
+function sfxDraw() {
+  try {
+    bell(523.25, 1.0, 0.12, 0);
+    bell(392.00, 1.4, 0.10, 0.14);
+  } catch (e) {}
+}
+function renderScore() {
+  scoreREl.textContent = scores.R;
+  scoreYEl.textContent = scores.Y;
+}
+function draw() {
+  sfxDraw();
+  showDrawBanner();
+}
+
+function pushHistory() {
+  history.push({
+    board: board.map(row => row.slice()),
+    current: current,
+    rotationsLeft: { R: rotationsLeft.R, Y: rotationsLeft.Y },
+  });
+}
+function undo() {
+  if (animating || gameOver || history.length === 0) return;
+  const s = history.pop();
+  board = s.board.map(row => row.slice());
+  current = s.current;
+  rotationsLeft = { R: s.rotationsLeft.R, Y: s.rotationsLeft.Y };
+  gameOver = false;
+  clearPreview();
+  hideWinBanner();
+  render();
+}
+
+function win(color) {
+  scores[color]++;
+  renderScore();
+  const pill = document.querySelector(color === "R" ? ".scoreboard .sc-R" : ".scoreboard .sc-Y");
+  if (pill) {
+    pill.classList.remove("bump");
+    void pill.offsetWidth;
+    pill.classList.add("bump");
+    setTimeout(() => pill.classList.remove("bump"), 700);
+  }
+  sfxWin(color);
+  celebrate(color);
+  showWinBanner(color);
+}
+
+function buildGrid() {
+  ROWS = MODES[mode].rows;
+  COLS = MODES[mode].cols;
+  CONNECT = MODES[mode].connect;
+  boardEl.style.gridTemplateColumns = `repeat(${COLS}, var(--cell))`;
+  boardEl.style.gridTemplateRows    = `repeat(${ROWS}, var(--cell))`;
+  boardEl.innerHTML = "";
+  cellEls.length = 0;
+  for (let r = 0; r < ROWS; r++) {
+    const row = [];
+    for (let c = 0; c < COLS; c++) {
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      const disc = document.createElement("div");
+      disc.className = "disc";
+      cell.appendChild(disc);
+      cell.addEventListener("click", () => onColumnClick(c));
+      cell.addEventListener("mouseenter", () => showPreview(c));
+      cell.addEventListener("mouseleave", clearPreview);
+      boardEl.appendChild(cell);
+      row.push(cell);
+    }
+    cellEls.push(row);
+  }
+}
+
+function init() {
+  board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+  current = "R";
+  rotationsLeft = { R: ROTATIONS_PER_PLAYER, Y: ROTATIONS_PER_PLAYER };
+  gameOver = false;
+  animating = false;
+  history = [];
+  hideWinBanner();
+  render();
+}
+
+function lowestEmptyRow(col) {
+  for (let r = ROWS - 1; r >= 0; r--) {
+    if (board[r][col] === null) return r;
+  }
+  return -1;
+}
+
+function onColumnClick(col) {
+  if (gameOver || animating) return;
+  const r = lowestEmptyRow(col);
+  if (r === -1) return;          // 満杯列は無視
+  pushHistory();                 // 着手前の状態を保存（待った用）
+  board[r][col] = current;
+  animating = true;              // 落下アニメ中は入力ロック
+  clearPreview();
+  render();                      // 結晶を配置（落下対象も含め描画）
+  animateDrop(r, col, () => {
+    animating = false;
+    sfxDrop();                   // 着地音は落ち切った瞬間に
+    endTurn();
+  });
+}
+
+// 結晶が「列の一番上のマス」から落ちてくる演出（重力加速 + 着地スカッシュ）
+function animateDrop(r, col, done) {
+  const disc = cellEls[r][col].querySelector(".disc");
+  if (!disc || typeof disc.animate !== "function") { done(); return; }
+  const target = cellEls[r][col].getBoundingClientRect();
+  const topCell = cellEls[0][col].getBoundingClientRect();
+  const startY = topCell.top - target.top;   // 最上段セルの位置から開始（負値 / r=0 なら 0）
+  const anim = disc.animate([
+    { transform: `translateY(${startY}px) scale(1)`, easing: "cubic-bezier(.45,0,.75,.4)" },
+    { transform: "translateY(0px) scale(1)", offset: 0.74, easing: "ease-out" },
+    { transform: "translateY(0px) scaleX(1.18) scaleY(.80)", offset: 0.83 },
+    { transform: "translateY(0px) scaleX(.96) scaleY(1.06)", offset: 0.92 },
+    { transform: "translateY(0px) scale(1)" },
+  ], { duration: 440, fill: "none" });
+  let called = false;
+  const fin = () => { if (called) return; called = true; done(); };
+  anim.onfinish = fin;
+  anim.oncancel = fin;
+  setTimeout(fin, 700);          // 保険（アニメ未発火時も必ず進行）
+}
+
+// 正方形専用。時計回り: new[i][j]=old[n-1-j][i] / 反時計回り: new[i][j]=old[j][n-1-i]
+function rotateMatrix(src, dir) {
+  const n = src.length;
+  const dst = Array.from({ length: n }, () => Array(n).fill(null));
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      dst[i][j] = dir === "cw" ? src[n - 1 - j][i] : src[j][n - 1 - i];
+    }
+  }
+  return dst;
+}
+
+// 各列の駒を上下の並び順を保ったまま底へ詰め直す
+function applyGravity(b) {
+  for (let c = 0; c < COLS; c++) {
+    const stack = [];
+    for (let r = 0; r < ROWS; r++) {
+      if (b[r][c] !== null) stack.push(b[r][c]);
+    }
+    for (let r = 0; r < ROWS; r++) {
+      const fromBottom = ROWS - 1 - r;
+      const idx = stack.length - 1 - r;
+      b[fromBottom][c] = idx >= 0 ? stack[idx] : null;
+    }
+  }
+  return b;
+}
+
+function rotateBoard(dir) {
+  if (!MODES[mode].rotation) return;       // 通常モードは回転不可
+  if (ROWS !== COLS) return;               // 回転は正方形のみ
+  if (gameOver || animating) return;
+  if (rotationsLeft[current] <= 0) return;
+
+  pushHistory();                 // 回転前の状態を保存（待った用）
+  rotationsLeft[current]--;
+  animating = true;
+  updateControls();
+
+  // 旧盤面を見せたまま回し、回転完了後に落ち直した盤へ差し替える
+  sfxRotate();
+  boardEl.style.transform = `rotate(${dir === "cw" ? 90 : -90}deg)`;
+
+  setTimeout(() => {
+    boardEl.style.transition = "none";
+    boardEl.style.transform = "rotate(0deg)";
+    void boardEl.offsetWidth;            // リフロー強制でトランジション無効を確定
+    boardEl.style.transition = "";
+
+    // 回転直後(重力前)の配置を一旦表示し、各ブロックを底へ落下させる
+    const rotated = rotateMatrix(board, dir);
+    const settled = applyGravity(rotated.map(row => row.slice()));
+    boardEl.classList.add("no-pop");   // 再描画でブロックが消えないように
+    board = rotated;
+    render();
+
+    settleWithGravity(rotated, () => {
+      board = settled;
+      render();
+      boardEl.classList.remove("no-pop");
+      animating = false;
+      clearPreview();
+      endTurn();
+    });
+  }, SPIN_MS);
+}
+
+// 回転後、各列のブロックが重力で底へ落ちていくモーション（落下演出と同じ挙動）
+function settleWithGravity(rotated, done) {
+  const moves = [];
+  for (let c = 0; c < COLS; c++) {
+    const stack = [];
+    for (let r = 0; r < ROWS; r++) {
+      if (rotated[r][c] !== null) stack.push(r);
+    }
+    const len = stack.length;
+    for (let i = 0; i < len; i++) {
+      const fromRow = stack[i];
+      const toRow = ROWS - len + i;     // applyGravity と同じ着地行
+      if (toRow !== fromRow) moves.push({ fromRow, toRow, c });
+    }
+  }
+  if (!moves.length) { done(); return; }
+
+  const a0 = cellEls[0][0].getBoundingClientRect();
+  const a1 = cellEls[1][0].getBoundingClientRect();
+  const stepY = a1.top - a0.top;        // 1セル分の縦移動量（セル高 + 隙間）
+
+  const anims = [];
+  for (const { fromRow, toRow, c } of moves) {
+    const disc = cellEls[fromRow][c].querySelector(".disc");
+    if (!disc || typeof disc.animate !== "function") continue;
+    const dist = (toRow - fromRow) * stepY;
+    anims.push(disc.animate([
+      { transform: "translateY(0px) scale(1)", easing: "cubic-bezier(.45,0,.75,.4)" },
+      { transform: `translateY(${dist}px) scale(1)`, offset: 0.80, easing: "ease-out" },
+      { transform: `translateY(${dist}px) scaleX(1.16) scaleY(.82)`, offset: 0.89 },
+      { transform: `translateY(${dist}px) scaleX(.97) scaleY(1.05)`, offset: 0.95 },
+      { transform: `translateY(${dist}px) scale(1)` },
+    ], { duration: 440, fill: "forwards" }));
+  }
+
+  let finished = false;
+  const finalize = () => {
+    if (finished) return;
+    finished = true;
+    anims.forEach(a => { try { a.cancel(); } catch (e) {} });  // WAAPI 残留を消してから確定描画
+    done();
+  };
+  setTimeout(finalize, 500);            // 落下時間 + 余白
+}
+
+function findWins() {
+  const dirs = [[0, 1], [1, 0], [1, 1], [1, -1]];
+  const winCells = new Set();
+  const colors = { R: false, Y: false };
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const color = board[r][c];
+      if (!color) continue;
+      for (const [dr, dc] of dirs) {
+        const er = r + dr * (CONNECT - 1);
+        const ec = c + dc * (CONNECT - 1);
+        if (er < 0 || er >= ROWS || ec < 0 || ec >= COLS) continue;
+        let ok = true;
+        for (let k = 1; k < CONNECT; k++) {
+          if (board[r + dr * k][c + dc * k] !== color) { ok = false; break; }
+        }
+        if (ok) {
+          colors[color] = true;
+          for (let k = 0; k < CONNECT; k++) {
+            winCells.add((r + dr * k) + "," + (c + dc * k));
+          }
+        }
+      }
+    }
+  }
+  return { colors, winCells };
+}
+
+function isBoardFull() {
+  return board.every(row => row.every(v => v !== null));
+}
+
+function endTurn() {
+  const { colors, winCells } = findWins();
+
+  if (colors.R && colors.Y) {
+    finish("引き分け（同時に4連）", winCells);
+    draw();
+  } else if (colors.R) {
+    finish("蒼晶の勝ち！", winCells);
+    win("R");
+  } else if (colors.Y) {
+    finish("紫晶の勝ち！", winCells);
+    win("Y");
+  } else if (isBoardFull()) {
+    finish("引き分け（盤面満杯）", winCells);
+    draw();
+  } else {
+    current = current === "R" ? "Y" : "R";
+    render();
+  }
+}
+
+function finish(message, winCells) {
+  gameOver = true;
+  statusEl.textContent = message;
+  turnDotEl.style.visibility = "hidden";
+  render(winCells);
+  updateControls();
+}
+
+function showPreview(col) {
+  if (gameOver || animating) return;
+  const r = lowestEmptyRow(col);
+  if (r === -1) return;
+  const disc = cellEls[r][col].querySelector(".disc");
+  disc.classList.add(current);
+  cellEls[r][col].classList.add("preview");
+}
+
+function clearPreview() {
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const cell = cellEls[r][c];
+      if (cell.classList.contains("preview")) {
+        cell.classList.remove("preview");
+        if (board[r][c] === null) {
+          cell.querySelector(".disc").className = "disc";
+        }
+      }
+    }
+  }
+}
+
+function render(winCells) {
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const cell = cellEls[r][c];
+      const disc = cell.querySelector(".disc");
+      const v = board[r][c];
+      cell.classList.remove("win", "preview");
+      disc.className = "disc";
+      if (v) {
+        disc.classList.add(v, "show");
+        if (winCells && winCells.has(r + "," + c)) cell.classList.add("win");
+      }
+    }
+  }
+  if (!gameOver) {
+    statusEl.textContent = current === "R" ? "蒼晶の番" : "紫晶の番";
+    turnDotEl.className = "turn-dot " + current;
+    turnDotEl.style.visibility = "visible";
+  }
+  rotREl.textContent = rotationsLeft.R;
+  rotYEl.textContent = rotationsLeft.Y;
+  updateControls();
+}
+
+function updateControls() {
+  const rot = MODES[mode].rotation;
+  const canRotate = rot && !gameOver && !animating && rotationsLeft[current] > 0;
+  btnLeft.disabled = !canRotate;
+  btnRight.disabled = !canRotate;
+  modeSpinBtn.disabled = animating;
+  modeNormalBtn.disabled = animating;
+  modeC5Btn.disabled = animating;
+  btnUndo.disabled = animating || gameOver || history.length === 0;
+}
+
+function applyModeUI() {
+  const cfg = MODES[mode];
+  rotationsEl.style.display = cfg.rotation ? "" : "none";
+  btnLeft.style.display = cfg.rotation ? "" : "none";
+  btnRight.style.display = cfg.rotation ? "" : "none";
+  subtitleEl.textContent = cfg.sub;
+  hintEl.textContent = cfg.hint;
+  modeSpinBtn.classList.toggle("active", mode === "spin");
+  modeNormalBtn.classList.toggle("active", mode === "normal");
+  modeC5Btn.classList.toggle("active", mode === "connect5");
+}
+
+function switchMode(m) {
+  if (animating) return;       // 回転アニメ中はモード切替を禁止
+  if (!MODES[m]) return;
+  mode = m;
+  scores = { R: 0, Y: 0 };     // モード変更で対戦成績はリセット
+  buildGrid();
+  init();
+  applyModeUI();
+  renderScore();
+}
+
+btnLeft.addEventListener("click", () => rotateBoard("ccw"));
+btnRight.addEventListener("click", () => rotateBoard("cw"));
+btnReset.addEventListener("click", init);
+btnUndo.addEventListener("click", undo);
+modeSpinBtn.addEventListener("click", () => switchMode("spin"));
+modeNormalBtn.addEventListener("click", () => switchMode("normal"));
+modeC5Btn.addEventListener("click", () => switchMode("connect5"));
+btnMute.addEventListener("click", () => {
+  muted = !muted;
+  btnMute.textContent = muted ? "🔇" : "🔊";
+});
+
+// キーボード操作: 1〜7=その列に落下 / Q=左回転 E=右回転 / R=リセット / M=ミュート
+document.addEventListener("keydown", (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (k >= "1" && k <= "9") {
+    const col = parseInt(k, 10) - 1;
+    if (col < COLS) onColumnClick(col);
+  } else if (k === "q") {
+    rotateBoard("ccw");
+  } else if (k === "e") {
+    rotateBoard("cw");
+  } else if (k === "r") {
+    init();
+  } else if (k === "u") {
+    undo();
+  } else if (k === "m") {
+    muted = !muted;
+    btnMute.textContent = muted ? "🔇" : "🔊";
+  }
+});
+
+buildGrid();
+init();
+applyModeUI();
+renderScore();
+</script>
+</body>
+</html>

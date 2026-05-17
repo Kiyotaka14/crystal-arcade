@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRYSTAL DOTS — ドット＆ボックス</title>
+<style>
+  :root{--dot:14px;--span:44px;--cyan:#4ef0ff;--cyan-deep:#1186b8;--magenta:#c46bff;--magenta-deep:#7a2bd0;
+    --glass:rgba(150,200,255,0.05);--glass-line:rgba(160,210,255,0.16);--ink:#dff1ff;}
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:14px;font-family:"Hiragino Sans","Yu Gothic",system-ui,sans-serif;color:var(--ink);background:#05070f;
+    padding:24px;position:relative;overflow-x:auto;}
+  body::before{content:"";position:fixed;inset:-25%;z-index:-2;
+    background:radial-gradient(40% 38% at 22% 28%,rgba(40,180,255,0.20),transparent 60%),
+      radial-gradient(42% 40% at 80% 70%,rgba(150,70,255,0.18),transparent 62%),
+      radial-gradient(50% 50% at 50% 50%,rgba(10,16,40,0.9),#04050c 75%);animation:drift 24s ease-in-out infinite alternate;}
+  body::after{content:"";position:fixed;inset:0;z-index:-1;
+    background-image:linear-gradient(rgba(120,200,255,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(120,200,255,0.05) 1px,transparent 1px);
+    background-size:46px 46px;-webkit-mask-image:radial-gradient(circle at 50% 45%,#000 30%,transparent 78%);mask-image:radial-gradient(circle at 50% 45%,#000 30%,transparent 78%);}
+  @keyframes drift{0%{transform:translate3d(-3%,-2%,0) scale(1.05);}100%{transform:translate3d(3%,2%,0) scale(1.12);}}
+  .top{display:flex;align-items:center;gap:14px;}
+  a.back{font-size:12px;font-weight:700;letter-spacing:.12em;text-decoration:none;color:#9fb9d4;
+    background:var(--glass);border:1px solid var(--glass-line);padding:8px 14px;border-radius:999px;}
+  a.back:hover{color:#dff1ff;border-color:rgba(120,220,255,.5);}
+  h1{margin:0;font-size:21px;font-weight:800;letter-spacing:.22em;text-indent:.22em;
+    background:linear-gradient(95deg,var(--cyan),#b9e8ff 42%,var(--magenta));-webkit-background-clip:text;background-clip:text;
+    color:transparent;filter:drop-shadow(0 0 12px rgba(90,200,255,.4));}
+  .status{display:flex;align-items:center;gap:12px;font-size:18px;font-weight:700;letter-spacing:.1em;min-height:26px;text-shadow:0 0 12px rgba(120,200,255,.3);}
+  .turn-dot{width:18px;height:18px;clip-path:polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);}
+  .turn-dot.C{background:linear-gradient(160deg,#d6fbff,var(--cyan) 45%,var(--cyan-deep));box-shadow:0 0 12px rgba(78,240,255,.7);}
+  .turn-dot.M{background:linear-gradient(160deg,#f3e0ff,var(--magenta) 45%,var(--magenta-deep));box-shadow:0 0 12px rgba(196,107,255,.7);}
+  .scoreboard{display:flex;gap:14px;font-size:14px;font-weight:700;letter-spacing:.1em;}
+  .scoreboard .sc{padding:5px 14px;border-radius:999px;background:var(--glass);border:1px solid var(--glass-line);}
+  .scoreboard .sc-C{color:#bff4ff;} .scoreboard .sc-M{color:#e6c9ff;} .scoreboard .sc b{color:#fff;font-size:16px;} .scoreboard .sep{color:#5f7088;}
+  .board-wrap{padding:18px;border-radius:18px;background:linear-gradient(150deg,rgba(80,160,255,0.10),rgba(150,80,255,0.08));
+    border:1px solid rgba(150,210,255,0.20);box-shadow:0 0 44px rgba(60,150,255,0.18),inset 0 1px 0 rgba(255,255,255,0.10);}
+  .grid{display:grid;}
+  .dot{width:var(--dot);height:var(--dot);border-radius:50%;
+    background:radial-gradient(circle at 38% 32%,#dff7ff,#5fa8c8);box-shadow:0 0 6px rgba(120,210,255,.5);align-self:center;justify-self:center;}
+  .edge{position:relative;cursor:pointer;}
+  .edge .ln{position:absolute;border-radius:999px;background:rgba(150,200,255,0.10);transition:background .15s;}
+  .edge.h .ln{left:2px;right:2px;top:50%;height:6px;transform:translateY(-50%);}
+  .edge.v .ln{top:2px;bottom:2px;left:50%;width:6px;transform:translateX(-50%);}
+  .edge:hover .ln{background:rgba(150,210,255,0.30);}
+  .edge.on.C .ln{background:linear-gradient(90deg,#eafdff,var(--cyan),var(--cyan-deep));box-shadow:0 0 10px rgba(78,240,255,.7);}
+  .edge.on.M .ln{background:linear-gradient(90deg,#f6e7ff,var(--magenta),var(--magenta-deep));box-shadow:0 0 10px rgba(196,107,255,.7);}
+  .edge.on{cursor:default;}
+  .box{display:flex;align-items:center;justify-content:center;border-radius:6px;transition:background .2s;}
+  .box.C{background:radial-gradient(circle at 40% 35%,rgba(78,240,255,0.30),rgba(17,134,184,0.16));box-shadow:inset 0 0 14px rgba(78,240,255,0.25);}
+  .box.M{background:radial-gradient(circle at 40% 35%,rgba(196,107,255,0.30),rgba(122,43,208,0.16));box-shadow:inset 0 0 14px rgba(196,107,255,0.25);}
+  .box .mk{font-size:15px;font-weight:800;opacity:.85;}
+  .box.danger{background:radial-gradient(circle at 50% 45%,rgba(255,180,70,0.20),transparent 70%);
+    box-shadow:inset 0 0 0 2px rgba(255,184,84,0.7);animation:dg .9s ease-in-out infinite alternate;}
+  .box.danger .mk{color:#ffcf7a;opacity:.95;}
+  @keyframes dg{from{box-shadow:inset 0 0 0 2px rgba(255,184,84,0.45);}to{box-shadow:inset 0 0 0 2px rgba(255,184,84,0.95),0 0 10px rgba(255,184,84,0.35);}}
+  .edge.last .ln{outline:2px solid rgba(255,255,255,0.5);}
+  .box.C .mk{color:#cff7ff;} .box.M .mk{color:#e6cdff;}
+  .controls{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+  button{font:inherit;font-weight:700;letter-spacing:.12em;color:var(--ink);background:var(--glass);border:1px solid var(--glass-line);
+    padding:11px 20px;border-radius:12px;cursor:pointer;transition:box-shadow .18s,border-color .18s,transform .05s;}
+  button:hover:not(:disabled){border-color:rgba(120,220,255,0.6);box-shadow:0 0 18px rgba(78,200,255,0.4);}
+  button.reset{border-color:rgba(150,120,255,0.45);}
+  .msg{font-size:12.5px;color:#8fb0ce;min-height:16px;letter-spacing:.06em;max-width:420px;text-align:center;line-height:1.6;}
+  .win-banner{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+    pointer-events:none;z-index:70;opacity:0;visibility:hidden;}
+  .win-banner.show{visibility:visible;animation:winpop .55s cubic-bezier(.2,1.5,.35,1) forwards;}
+  .win-banner .who{font-size:22px;font-weight:700;letter-spacing:.3em;text-indent:.3em;color:#d6ecff;text-shadow:0 0 14px rgba(120,200,255,.5);}
+  .win-banner .big{font-size:clamp(64px,16vw,140px);font-weight:900;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;}
+  .win-banner.fx-C .big{background-image:linear-gradient(160deg,#f2feff,var(--cyan) 55%,#7fe6ff);filter:drop-shadow(0 0 26px rgba(78,240,255,.7));}
+  .win-banner.fx-M .big{background-image:linear-gradient(160deg,#faf0ff,var(--magenta) 55%,#dba6ff);filter:drop-shadow(0 0 26px rgba(196,107,255,.7));}
+  .win-banner.fx-D .big{background-image:linear-gradient(160deg,#eaf3fb,#a9c0d8 55%,#d2e2f1);filter:drop-shadow(0 0 22px rgba(170,205,235,.6));}
+  @keyframes winpop{0%{opacity:0;transform:scale(.55);}65%{opacity:1;}100%{opacity:1;transform:scale(1);}}
+</style>
+</head>
+<body>
+  <div class="top"><a class="back" href="index.html">‹ ARCADE</a><h1>CRYSTAL DOTS</h1></div>
+  <div class="status"><span id="statusText">蒼晶の番</span><span id="turnDot" class="turn-dot C"></span></div>
+  <div class="scoreboard">
+    <span class="sc sc-C">蒼晶 <b id="scC">0</b></span><span class="sep">獲得</span><span class="sc sc-M"><b id="scM">0</b> 紫晶</span>
+  </div>
+  <div class="board-wrap"><div id="grid" class="grid"></div></div>
+  <div class="msg" id="msg">線を引き四辺を閉じてマスを獲得（獲得でもう一手）。「!」＝3辺マス＝触れると相手に取られる危険。鎖を読んで譲り合うのが鍵。</div>
+  <div class="controls">
+    <button id="btnReset" type="button" class="reset">RESET</button>
+    <button id="btnMute" type="button" aria-label="サウンド切替">🔊</button>
+  </div>
+  <div id="winBanner" class="win-banner" aria-hidden="true"></div>
+
+<script>
+"use strict";
+const B=4;                       // 4x4 マス（読みやすく＝運ゲー感の低減）
+let H, V, owner, current, gameOver, scores, lastEdge;
+const gridEl=document.getElementById("grid");
+const statusEl=document.getElementById("statusText");
+const turnDotEl=document.getElementById("turnDot");
+const scCEl=document.getElementById("scC"), scMEl=document.getElementById("scM");
+const msgEl=document.getElementById("msg");
+const winBannerEl=document.getElementById("winBanner");
+const btnReset=document.getElementById("btnReset"), btnMute=document.getElementById("btnMute");
+let muted=false;
+const hEl={}, vEl={}, boxEl={};
+
+let audioCtx=null;
+function getCtx(){try{if(!audioCtx){const A=window.AudioContext||window.webkitAudioContext;if(!A)return null;audioCtx=new A();}if(audioCtx.state==="suspended")audioCtx.resume();return audioCtx;}catch(e){return null;}}
+function bell(freq,dur,gain,when){
+  if(muted)return;const ctx=getCtx();if(!ctx)return;
+  const t0=ctx.currentTime+(when||0);const out=ctx.createGain();out.gain.value=gain;out.connect(ctx.destination);
+  for(const [ra,vo,dd] of [[1,1,1],[2,0.45,0.7],[2.76,0.3,0.55],[3.76,0.18,0.42],[5.4,0.11,0.3]]){
+    const o=ctx.createOscillator(),g=ctx.createGain();o.type="sine";o.frequency.value=freq*ra;o.detune.value=Math.random()*6-3;
+    const pd=Math.max(0.08,dur*dd);g.gain.setValueAtTime(0.0001,t0);g.gain.exponentialRampToValueAtTime(vo,t0+0.004);g.gain.exponentialRampToValueAtTime(0.0001,t0+pd);
+    o.connect(g).connect(out);o.start(t0);o.stop(t0+pd+0.05);
+  }
+}
+function sfxLine(){try{bell(880,0.45,0.10,0);}catch(e){}}
+function sfxBox(c){try{const b=c==="C"?1046:880;bell(b,0.7,0.14,0);bell(b*1.5,0.5,0.06,0.04);}catch(e){}}
+function sfxWin(c){try{const base=c==="C"?659.25:587.33;[0,4,7,12,16].forEach((s,i)=>bell(base*Math.pow(2,s/12),1.7-i*0.12,0.14,i*0.1));}catch(e){}}
+function sfxDraw(){try{bell(523.25,1.0,0.11,0);bell(392,1.3,0.09,0.14);}catch(e){}}
+
+function build(){
+  const G=2*B+1;
+  let cols=""; for(let i=0;i<G;i++) cols+=(i%2===0?"var(--dot)":"var(--span)")+" ";
+  gridEl.style.gridTemplateColumns=cols.trim();
+  let rows=""; for(let i=0;i<G;i++) rows+=(i%2===0?"var(--dot)":"var(--span)")+" ";
+  gridEl.style.gridTemplateRows=rows.trim();
+  gridEl.innerHTML="";
+  for(let gr=0;gr<G;gr++)for(let gc=0;gc<G;gc++){
+    if(gr%2===0&&gc%2===0){
+      const d=document.createElement("div"); d.className="dot"; gridEl.appendChild(d);
+    } else if(gr%2===0&&gc%2===1){
+      const r=gr/2, c=(gc-1)/2;
+      const e=document.createElement("div"); e.className="edge h";
+      const ln=document.createElement("div"); ln.className="ln"; e.appendChild(ln);
+      e.addEventListener("click",()=>drawEdge("H",r,c));
+      hEl[r+","+c]=e; gridEl.appendChild(e);
+    } else if(gr%2===1&&gc%2===0){
+      const r=(gr-1)/2, c=gc/2;
+      const e=document.createElement("div"); e.className="edge v";
+      const ln=document.createElement("div"); ln.className="ln"; e.appendChild(ln);
+      e.addEventListener("click",()=>drawEdge("V",r,c));
+      vEl[r+","+c]=e; gridEl.appendChild(e);
+    } else {
+      const r=(gr-1)/2, c=(gc-1)/2;
+      const b=document.createElement("div"); b.className="box";
+      const mk=document.createElement("div"); mk.className="mk"; b.appendChild(mk);
+      boxEl[r+","+c]=b; gridEl.appendChild(b);
+    }
+  }
+}
+function init(){
+  H=Array.from({length:B+1},()=>Array(B).fill(false));   // H[r][c]: r:0..B, c:0..B-1
+  V=Array.from({length:B},()=>Array(B+1).fill(false));   // V[r][c]: r:0..B-1, c:0..B
+  owner=Array.from({length:B},()=>Array(B).fill(null));
+  current="C"; gameOver=false; lastEdge=null;
+  if(!scores) scores={C:0,M:0};
+  hideBanner(); render();
+}
+function boxSides(r,c){ return [H[r][c], H[r+1][c], V[r][c], V[r][c+1]]; }
+function boxComplete(r,c){ return boxSides(r,c).every(Boolean); }
+function allEdgesDrawn(){
+  for(let r=0;r<=B;r++)for(let c=0;c<B;c++) if(!H[r][c]) return false;
+  for(let r=0;r<B;r++)for(let c=0;c<=B;c++) if(!V[r][c]) return false;
+  return true;
+}
+function adjacentBoxes(type,r,c){
+  const res=[];
+  if(type==="H"){ if(r-1>=0) res.push([r-1,c]); if(r<B) res.push([r,c]); }
+  else { if(c-1>=0) res.push([r,c-1]); if(c<B) res.push([r,c]); }
+  return res;
+}
+function drawEdge(type,r,c){
+  if(gameOver) return;
+  const arr = type==="H"?H:V;
+  if(arr[r][c]) return;                 // 既に引かれている
+  arr[r][c]=true;
+  lastEdge=type+r+","+c;
+  sfxLine();
+  let claimed=0;
+  for(const [br,bc] of adjacentBoxes(type,r,c)){
+    if(owner[br][bc]===null && boxComplete(br,bc)){ owner[br][bc]=current; claimed++; }
+  }
+  if(claimed>0) sfxBox(current);
+  if(allEdgesDrawn()){ render(); finishGame(); return; }
+  if(claimed===0){ current = current==="C"?"M":"C"; }   // 獲得なし→交代 / 獲得→連続手番
+  render();
+}
+function counts(){ let C=0,M=0; for(let r=0;r<B;r++)for(let c=0;c<B;c++){ if(owner[r][c]==="C")C++; else if(owner[r][c]==="M")M++; } return {C,M}; }
+function finishGame(){
+  gameOver=true;
+  const {C,M}=counts();
+  if(C>M){ scores.C++; statusEl.textContent="蒼晶の勝ち！"; sfxWin("C"); showBanner("蒼晶","勝ち","fx-C"); }
+  else if(M>C){ scores.M++; statusEl.textContent="紫晶の勝ち！"; sfxWin("M"); showBanner("紫晶","勝ち","fx-M"); }
+  else { statusEl.textContent="引き分け"; sfxDraw(); showBanner("DRAW","引き分け","fx-D"); }
+  turnDotEl.style.visibility="hidden";
+  msgEl.textContent="蒼晶 "+C+" — "+M+" 紫晶";
+  render();
+}
+function showBanner(who,big,cls){
+  winBannerEl.innerHTML='<div class="who">'+who+'</div><div class="big">'+big+'</div>';
+  winBannerEl.classList.remove("fx-C","fx-M","fx-D","show");
+  void winBannerEl.offsetWidth; winBannerEl.classList.add(cls,"show");
+}
+function hideBanner(){ winBannerEl.classList.remove("show","fx-C","fx-M","fx-D"); }
+function render(){
+  for(let r=0;r<=B;r++)for(let c=0;c<B;c++){
+    const e=hEl[r+","+c]; e.className="edge h"+(H[r][c]?(" on "+edgeColor("H",r,c)):"")+(lastEdge==="H"+r+","+c?" last":"");
+  }
+  for(let r=0;r<B;r++)for(let c=0;c<=B;c++){
+    const e=vEl[r+","+c]; e.className="edge v"+(V[r][c]?(" on "+edgeColor("V",r,c)):"")+(lastEdge==="V"+r+","+c?" last":"");
+  }
+  for(let r=0;r<B;r++)for(let c=0;c<B;c++){
+    const b=boxEl[r+","+c]; const o=owner[r][c];
+    const sides=boxSides(r,c).filter(Boolean).length;
+    const danger = !o && sides===3 && !gameOver;     // 3辺＝次に4辺目で取られる「危険マス」
+    b.className="box"+(o?(" "+o):"")+(danger?" danger":"");
+    b.querySelector(".mk").textContent = o?(o==="C"?"蒼":"紫"):(danger?"!":"");
+  }
+  if(!gameOver){
+    statusEl.textContent=current==="C"?"蒼晶の番":"紫晶の番";
+    turnDotEl.className="turn-dot "+current; turnDotEl.style.visibility="visible";
+  }
+  const {C,M}=counts(); scCEl.textContent=C; scMEl.textContent=M;
+}
+// 線の色は引いた人の色（owner配列とは別に視覚用、引いた時点の current を記録）
+const edgeOwnerMap={};
+function edgeColor(type,r,c){ return edgeOwnerMap[type+r+","+c] || "C"; }
+const _origDraw=drawEdge;
+drawEdge=function(type,r,c){
+  if(!gameOver){
+    const arr=type==="H"?H:V;
+    if(!arr[r][c]) edgeOwnerMap[type+r+","+c]=current;
+  }
+  return _origDraw(type,r,c);
+};
+
+btnReset.addEventListener("click",()=>{ for(const k in edgeOwnerMap) delete edgeOwnerMap[k]; msgEl.textContent="線を引き四辺を閉じてマスを獲得（獲得でもう一手）。「!」＝3辺マス＝触れると相手に取られる危険。鎖を読んで譲り合うのが鍵。"; init(); });
+btnMute.addEventListener("click",()=>{ muted=!muted; btnMute.textContent=muted?"🔇":"🔊"; });
+document.addEventListener("keydown",(e)=>{const k=e.key.toLowerCase();if(k==="r"){for(const x in edgeOwnerMap)delete edgeOwnerMap[x];init();}else if(k==="m"){muted=!muted;btnMute.textContent=muted?"🔇":"🔊";}});
+
+build();
+init();
+</script>
+</body>
+</html>

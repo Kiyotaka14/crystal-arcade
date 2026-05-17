@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRYSTAL GOMOKU — 五目並べ</title>
+<style>
+  :root{--cell:32px;--gap:2px;--cyan:#4ef0ff;--cyan-deep:#1186b8;--magenta:#c46bff;--magenta-deep:#7a2bd0;
+    --glass:rgba(150,200,255,0.05);--glass-line:rgba(160,210,255,0.16);--ink:#dff1ff;}
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:14px;font-family:"Hiragino Sans","Yu Gothic",system-ui,sans-serif;color:var(--ink);background:#05070f;
+    padding:24px;position:relative;overflow-x:auto;}
+  body::before{content:"";position:fixed;inset:-25%;z-index:-2;
+    background:radial-gradient(40% 38% at 22% 28%,rgba(40,180,255,0.20),transparent 60%),
+      radial-gradient(42% 40% at 80% 70%,rgba(150,70,255,0.18),transparent 62%),
+      radial-gradient(50% 50% at 50% 50%,rgba(10,16,40,0.9),#04050c 75%);animation:drift 24s ease-in-out infinite alternate;}
+  body::after{content:"";position:fixed;inset:0;z-index:-1;
+    background-image:linear-gradient(rgba(120,200,255,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(120,200,255,0.05) 1px,transparent 1px);
+    background-size:46px 46px;-webkit-mask-image:radial-gradient(circle at 50% 45%,#000 30%,transparent 78%);mask-image:radial-gradient(circle at 50% 45%,#000 30%,transparent 78%);}
+  @keyframes drift{0%{transform:translate3d(-3%,-2%,0) scale(1.05);}100%{transform:translate3d(3%,2%,0) scale(1.12);}}
+  .top{display:flex;align-items:center;gap:14px;}
+  a.back{font-size:12px;font-weight:700;letter-spacing:.12em;text-decoration:none;color:#9fb9d4;
+    background:var(--glass);border:1px solid var(--glass-line);padding:8px 14px;border-radius:999px;}
+  a.back:hover{color:#dff1ff;border-color:rgba(120,220,255,.5);}
+  h1{margin:0;font-size:22px;font-weight:800;letter-spacing:.26em;text-indent:.26em;
+    background:linear-gradient(95deg,var(--cyan),#b9e8ff 42%,var(--magenta));-webkit-background-clip:text;background-clip:text;
+    color:transparent;filter:drop-shadow(0 0 12px rgba(90,200,255,.4));}
+  .status{display:flex;align-items:center;gap:12px;font-size:18px;font-weight:700;letter-spacing:.1em;min-height:26px;text-shadow:0 0 12px rgba(120,200,255,.3);}
+  .turn-dot{width:18px;height:18px;clip-path:polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);}
+  .turn-dot.C{background:linear-gradient(160deg,#d6fbff,var(--cyan) 45%,var(--cyan-deep));box-shadow:0 0 12px rgba(78,240,255,.7);}
+  .turn-dot.M{background:linear-gradient(160deg,#f3e0ff,var(--magenta) 45%,var(--magenta-deep));box-shadow:0 0 12px rgba(196,107,255,.7);}
+  .scoreboard{display:flex;gap:14px;font-size:14px;font-weight:700;letter-spacing:.1em;}
+  .scoreboard .sc{padding:5px 14px;border-radius:999px;background:var(--glass);border:1px solid var(--glass-line);}
+  .scoreboard .sc-C{color:#bff4ff;} .scoreboard .sc-M{color:#e6c9ff;} .scoreboard .sc b{color:#fff;font-size:16px;} .scoreboard .sep{color:#5f7088;}
+  .board-wrap{padding:10px;border-radius:16px;background:linear-gradient(150deg,rgba(80,160,255,0.10),rgba(150,80,255,0.08));
+    border:1px solid rgba(150,210,255,0.20);box-shadow:0 0 40px rgba(60,150,255,0.18),inset 0 1px 0 rgba(255,255,255,0.10);}
+  .board{display:grid;grid-template-columns:repeat(15,var(--cell));grid-template-rows:repeat(15,var(--cell));gap:var(--gap);
+    padding:var(--gap);border-radius:10px;background:linear-gradient(135deg,rgba(20,40,80,0.55),rgba(40,20,70,0.55));
+    box-shadow:inset 0 0 30px rgba(8,14,30,0.9);}
+  .c{width:var(--cell);height:var(--cell);border-radius:6px;background:#0a1226;
+    box-shadow:inset 0 0 0 1px rgba(150,200,255,0.06),inset 0 2px 6px rgba(0,0,0,0.5);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .gem{width:80%;height:80%;clip-path:polygon(50% 4%,94% 27%,94% 73%,50% 96%,6% 73%,6% 27%);
+    transform:scale(0);transition:transform .18s cubic-bezier(.34,1.56,.64,1);}
+  .gem.show{transform:scale(1);}
+  .gem.C{background:radial-gradient(circle at 36% 28%,#eafdff,var(--cyan) 46%,var(--cyan-deep) 100%);box-shadow:0 0 8px rgba(78,240,255,.65);}
+  .gem.M{background:radial-gradient(circle at 36% 28%,#f6e7ff,var(--magenta) 46%,var(--magenta-deep) 100%);box-shadow:0 0 8px rgba(196,107,255,.65);}
+  .c.last{box-shadow:inset 0 0 0 2px rgba(255,255,255,0.4),inset 0 2px 6px rgba(0,0,0,0.5);}
+  .c.win .gem{animation:wpulse .8s ease-in-out infinite alternate;}
+  @keyframes wpulse{from{filter:brightness(1);}to{filter:brightness(1.7) drop-shadow(0 0 8px #fff);}}
+  .controls{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+  button{font:inherit;font-weight:700;letter-spacing:.12em;color:var(--ink);background:var(--glass);border:1px solid var(--glass-line);
+    padding:11px 20px;border-radius:12px;cursor:pointer;transition:box-shadow .18s,border-color .18s,transform .05s;}
+  button:hover:not(:disabled){border-color:rgba(120,220,255,0.6);box-shadow:0 0 18px rgba(78,200,255,0.4);}
+  button.reset{border-color:rgba(150,120,255,0.45);}
+  .msg{font-size:12.5px;color:#8fb0ce;min-height:16px;letter-spacing:.06em;}
+  .win-banner{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+    pointer-events:none;z-index:70;opacity:0;visibility:hidden;}
+  .win-banner.show{visibility:visible;animation:winpop .55s cubic-bezier(.2,1.5,.35,1) forwards;}
+  .win-banner .who{font-size:22px;font-weight:700;letter-spacing:.3em;text-indent:.3em;color:#d6ecff;text-shadow:0 0 14px rgba(120,200,255,.5);}
+  .win-banner .big{font-size:clamp(64px,16vw,140px);font-weight:900;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;}
+  .win-banner.fx-C .big{background-image:linear-gradient(160deg,#f2feff,var(--cyan) 55%,#7fe6ff);filter:drop-shadow(0 0 26px rgba(78,240,255,.7));}
+  .win-banner.fx-M .big{background-image:linear-gradient(160deg,#faf0ff,var(--magenta) 55%,#dba6ff);filter:drop-shadow(0 0 26px rgba(196,107,255,.7));}
+  .win-banner.fx-D .big{background-image:linear-gradient(160deg,#eaf3fb,#a9c0d8 55%,#d2e2f1);filter:drop-shadow(0 0 22px rgba(170,205,235,.6));}
+  @keyframes winpop{0%{opacity:0;transform:scale(.55);}65%{opacity:1;}100%{opacity:1;transform:scale(1);}}
+</style>
+</head>
+<body>
+  <div class="top"><a class="back" href="index.html">‹ ARCADE</a><h1>CRYSTAL GOMOKU</h1></div>
+  <div class="status"><span id="statusText">蒼晶の番</span><span id="turnDot" class="turn-dot C"></span></div>
+  <div class="scoreboard">
+    <span class="sc sc-C">蒼晶 <b id="scC">0</b></span><span class="sep">勝</span><span class="sc sc-M"><b id="scM">0</b> 紫晶</span>
+  </div>
+  <div class="board-wrap"><div id="board" class="board"></div></div>
+  <div class="msg" id="msg">交点をクリックして結晶を置き、先に縦・横・斜めで5つ並べたら勝ち</div>
+  <div class="controls">
+    <button id="btnReset" type="button" class="reset">RESET</button>
+    <button id="btnMute" type="button" aria-label="サウンド切替">🔊</button>
+  </div>
+  <div id="winBanner" class="win-banner" aria-hidden="true"></div>
+
+<script>
+"use strict";
+const N=15, NEED=5;
+let board, current, gameOver, last, scores;
+const boardEl=document.getElementById("board");
+const statusEl=document.getElementById("statusText");
+const turnDotEl=document.getElementById("turnDot");
+const scCEl=document.getElementById("scC"), scMEl=document.getElementById("scM");
+const msgEl=document.getElementById("msg");
+const winBannerEl=document.getElementById("winBanner");
+const btnReset=document.getElementById("btnReset"), btnMute=document.getElementById("btnMute");
+const cellEls=[]; let muted=false;
+
+let audioCtx=null;
+function getCtx(){try{if(!audioCtx){const A=window.AudioContext||window.webkitAudioContext;if(!A)return null;audioCtx=new A();}if(audioCtx.state==="suspended")audioCtx.resume();return audioCtx;}catch(e){return null;}}
+function bell(freq,dur,gain,when){
+  if(muted)return;const ctx=getCtx();if(!ctx)return;
+  const t0=ctx.currentTime+(when||0);const out=ctx.createGain();out.gain.value=gain;out.connect(ctx.destination);
+  for(const [ra,vo,dd] of [[1,1,1],[2,0.45,0.7],[2.76,0.3,0.55],[3.76,0.18,0.42],[5.4,0.11,0.3]]){
+    const o=ctx.createOscillator(),g=ctx.createGain();o.type="sine";o.frequency.value=freq*ra;o.detune.value=Math.random()*6-3;
+    const pd=Math.max(0.08,dur*dd);g.gain.setValueAtTime(0.0001,t0);g.gain.exponentialRampToValueAtTime(vo,t0+0.004);g.gain.exponentialRampToValueAtTime(0.0001,t0+pd);
+    o.connect(g).connect(out);o.start(t0);o.stop(t0+pd+0.05);
+  }
+}
+function sfxPlace(){try{bell(1318.51,0.7,0.13,0);bell(1975.53,0.45,0.05,0.004);}catch(e){}}
+function sfxWin(c){try{const base=c==="C"?659.25:587.33;[0,4,7,12,16].forEach((s,i)=>bell(base*Math.pow(2,s/12),1.7-i*0.12,0.14,i*0.1));}catch(e){}}
+function sfxDraw(){try{bell(523.25,1.0,0.11,0);bell(392,1.3,0.09,0.14);}catch(e){}}
+
+function build(){
+  boardEl.innerHTML=""; cellEls.length=0;
+  for(let r=0;r<N;r++){const row=[];for(let c=0;c<N;c++){
+    const cell=document.createElement("div");cell.className="c";
+    const g=document.createElement("div");g.className="gem";cell.appendChild(g);
+    cell.addEventListener("click",()=>onClick(r,c));
+    boardEl.appendChild(cell);row.push(cell);
+  }cellEls.push(row);}
+}
+function init(){
+  board=Array.from({length:N},()=>Array(N).fill(null));
+  current="C"; gameOver=false; last=null;
+  if(!scores) scores={C:0,M:0};
+  hideBanner(); render();
+}
+function inb(r,c){return r>=0&&r<N&&c>=0&&c<N;}
+function winLineAt(r,c,p){
+  const dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  for(const [dr,dc] of dirs){
+    const line=[[r,c]];
+    let rr=r+dr,cc=c+dc; while(inb(rr,cc)&&board[rr][cc]===p){line.push([rr,cc]);rr+=dr;cc+=dc;}
+    rr=r-dr;cc=c-dc; while(inb(rr,cc)&&board[rr][cc]===p){line.unshift([rr,cc]);rr-=dr;cc-=dc;}
+    if(line.length>=NEED) return line;
+  }
+  return null;
+}
+function boardFull(){ return board.every(row=>row.every(v=>v!==null)); }
+function onClick(r,c){
+  if(gameOver) return;
+  if(board[r][c]!==null) return;
+  board[r][c]=current; last=[r,c]; sfxPlace();
+  const line=winLineAt(r,c,current);
+  if(line){ finishGame(current,line); return; }
+  if(boardFull()){ finishGame(null,null); return; }
+  current=current==="C"?"M":"C";
+  render();
+}
+function finishGame(winner,line){
+  gameOver=true;
+  if(winner){
+    scores[winner]++;
+    const who=winner==="C"?"蒼晶":"紫晶";
+    statusEl.textContent=who+"の勝ち！"; sfxWin(winner);
+    showBanner(who,"勝ち",winner==="C"?"fx-C":"fx-M");
+  } else {
+    statusEl.textContent="引き分け"; sfxDraw();
+    showBanner("DRAW","引き分け","fx-D");
+  }
+  turnDotEl.style.visibility="hidden";
+  render(line);
+}
+function showBanner(who,big,cls){
+  winBannerEl.innerHTML='<div class="who">'+who+'</div><div class="big">'+big+'</div>';
+  winBannerEl.classList.remove("fx-C","fx-M","fx-D","show");
+  void winBannerEl.offsetWidth; winBannerEl.classList.add(cls,"show");
+}
+function hideBanner(){ winBannerEl.classList.remove("show","fx-C","fx-M","fx-D"); }
+function render(winLine){
+  const ws=new Set((winLine||[]).map(([r,c])=>r+","+c));
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const cell=cellEls[r][c], g=cell.querySelector(".gem"), v=board[r][c];
+    cell.classList.toggle("last", !!last&&last[0]===r&&last[1]===c);
+    cell.classList.toggle("win", ws.has(r+","+c));
+    g.className="gem"+(v?(" "+v+" show"):"");
+  }
+  if(!gameOver){
+    statusEl.textContent=current==="C"?"蒼晶の番":"紫晶の番";
+    turnDotEl.className="turn-dot "+current; turnDotEl.style.visibility="visible";
+  }
+  scCEl.textContent=scores.C; scMEl.textContent=scores.M;
+}
+btnReset.addEventListener("click",()=>{ msgEl.textContent="交点をクリックして結晶を置き、先に縦・横・斜めで5つ並べたら勝ち"; init(); });
+btnMute.addEventListener("click",()=>{ muted=!muted; btnMute.textContent=muted?"🔇":"🔊"; });
+document.addEventListener("keydown",(e)=>{const k=e.key.toLowerCase();if(k==="r")init();else if(k==="m"){muted=!muted;btnMute.textContent=muted?"🔇":"🔊";}});
+build();
+init();
+</script>
+</body>
+</html>

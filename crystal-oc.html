@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRYSTAL ORDER&CHAOS — 秩序と混沌</title>
+<style>
+  :root{--cell:48px;--gap:5px;--cyan:#4ef0ff;--cyan-deep:#1186b8;--magenta:#c46bff;--magenta-deep:#7a2bd0;
+    --glass:rgba(150,200,255,0.05);--glass-line:rgba(160,210,255,0.16);--ink:#dff1ff;}
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:14px;font-family:"Hiragino Sans","Yu Gothic",system-ui,sans-serif;color:var(--ink);background:#05070f;
+    padding:24px;position:relative;overflow-x:auto;}
+  body::before{content:"";position:fixed;inset:-25%;z-index:-2;
+    background:radial-gradient(40% 38% at 22% 28%,rgba(40,180,255,0.20),transparent 60%),
+      radial-gradient(42% 40% at 80% 70%,rgba(150,70,255,0.18),transparent 62%),
+      radial-gradient(50% 50% at 50% 50%,rgba(10,16,40,0.9),#04050c 75%);animation:drift 24s ease-in-out infinite alternate;}
+  body::after{content:"";position:fixed;inset:0;z-index:-1;
+    background-image:linear-gradient(rgba(120,200,255,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(120,200,255,0.05) 1px,transparent 1px);
+    background-size:46px 46px;-webkit-mask-image:radial-gradient(circle at 50% 45%,#000 30%,transparent 78%);mask-image:radial-gradient(circle at 50% 45%,#000 30%,transparent 78%);}
+  @keyframes drift{0%{transform:translate3d(-3%,-2%,0) scale(1.05);}100%{transform:translate3d(3%,2%,0) scale(1.12);}}
+  .top{display:flex;align-items:center;gap:14px;}
+  a.back{font-size:12px;font-weight:700;letter-spacing:.12em;text-decoration:none;color:#9fb9d4;
+    background:var(--glass);border:1px solid var(--glass-line);padding:8px 14px;border-radius:999px;}
+  a.back:hover{color:#dff1ff;border-color:rgba(120,220,255,.5);}
+  h1{margin:0;font-size:20px;font-weight:800;letter-spacing:.2em;text-indent:.2em;
+    background:linear-gradient(95deg,var(--cyan),#b9e8ff 42%,var(--magenta));-webkit-background-clip:text;background-clip:text;
+    color:transparent;filter:drop-shadow(0 0 12px rgba(90,200,255,.4));}
+  .status{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700;letter-spacing:.08em;min-height:24px;text-shadow:0 0 12px rgba(120,200,255,.3);}
+  .legend{font-size:12px;color:#8fb0ce;letter-spacing:.05em;max-width:440px;text-align:center;line-height:1.6;}
+  .legend b{color:#cfe8ff;}
+  .pick{display:flex;align-items:center;gap:10px;font-size:13px;color:#9fb9d4;}
+  .sw{width:30px;height:30px;clip-path:polygon(50% 4%,94% 27%,94% 73%,50% 96%,6% 73%,6% 27%);cursor:pointer;border:0;background:transparent;padding:0;}
+  .sw i{display:block;width:100%;height:100%;clip-path:inherit;}
+  .sw.C i{background:radial-gradient(circle at 36% 28%,#eafdff,var(--cyan) 46%,var(--cyan-deep) 100%);}
+  .sw.M i{background:radial-gradient(circle at 36% 28%,#f6e7ff,var(--magenta) 46%,var(--magenta-deep) 100%);}
+  .sw.active{outline:2px solid #fff;filter:drop-shadow(0 0 8px rgba(255,255,255,.6));}
+  .board-wrap{padding:14px;border-radius:18px;background:linear-gradient(150deg,rgba(80,160,255,0.10),rgba(150,80,255,0.08));
+    border:1px solid rgba(150,210,255,0.20);box-shadow:0 0 44px rgba(60,150,255,0.18),inset 0 1px 0 rgba(255,255,255,0.10);}
+  .board{display:grid;grid-template-columns:repeat(6,var(--cell));grid-template-rows:repeat(6,var(--cell));gap:var(--gap);
+    padding:var(--gap);border-radius:12px;background:linear-gradient(135deg,rgba(20,40,80,0.55),rgba(40,20,70,0.55));box-shadow:inset 0 0 30px rgba(8,14,30,0.9);}
+  .c{width:var(--cell);height:var(--cell);border-radius:8px;background:#0a1226;
+    box-shadow:inset 0 0 0 1px rgba(150,200,255,0.07),inset 0 3px 7px rgba(0,0,0,0.5);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .gem{width:78%;height:78%;clip-path:polygon(50% 4%,94% 27%,94% 73%,50% 96%,6% 73%,6% 27%);transform:scale(0);transition:transform .18s cubic-bezier(.34,1.56,.64,1);}
+  .gem.show{transform:scale(1);}
+  .gem.C{background:radial-gradient(circle at 36% 28%,#eafdff,var(--cyan) 46%,var(--cyan-deep) 100%);box-shadow:0 0 9px rgba(78,240,255,.6);}
+  .gem.M{background:radial-gradient(circle at 36% 28%,#f6e7ff,var(--magenta) 46%,var(--magenta-deep) 100%);box-shadow:0 0 9px rgba(196,107,255,.6);}
+  .c.win .gem{animation:wp .8s ease-in-out infinite alternate;}
+  @keyframes wp{from{filter:brightness(1);}to{filter:brightness(1.8) drop-shadow(0 0 7px #fff);}}
+  .controls{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+  button.b{font:inherit;font-weight:700;letter-spacing:.12em;color:var(--ink);background:var(--glass);border:1px solid var(--glass-line);
+    padding:11px 20px;border-radius:12px;cursor:pointer;transition:box-shadow .18s,border-color .18s,transform .05s;}
+  button.b:hover:not(:disabled){border-color:rgba(120,220,255,0.6);box-shadow:0 0 18px rgba(78,200,255,0.4);}
+  button.b.reset{border-color:rgba(150,120,255,0.45);}
+  .msg{font-size:12.5px;color:#8fb0ce;min-height:16px;letter-spacing:.06em;}
+  .win-banner{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+    pointer-events:none;z-index:70;opacity:0;visibility:hidden;}
+  .win-banner.show{visibility:visible;animation:winpop .55s cubic-bezier(.2,1.5,.35,1) forwards;}
+  .win-banner .who{font-size:22px;font-weight:700;letter-spacing:.3em;text-indent:.3em;color:#d6ecff;text-shadow:0 0 14px rgba(120,200,255,.5);}
+  .win-banner .big{font-size:clamp(60px,15vw,130px);font-weight:900;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;}
+  .win-banner.fx-C .big{background-image:linear-gradient(160deg,#f2feff,var(--cyan) 55%,#7fe6ff);filter:drop-shadow(0 0 26px rgba(78,240,255,.7));}
+  .win-banner.fx-M .big{background-image:linear-gradient(160deg,#faf0ff,var(--magenta) 55%,#dba6ff);filter:drop-shadow(0 0 26px rgba(196,107,255,.7));}
+  @keyframes winpop{0%{opacity:0;transform:scale(.55);}65%{opacity:1;}100%{opacity:1;transform:scale(1);}}
+</style>
+</head>
+<body>
+  <div class="top"><a class="back" href="index.html">‹ ARCADE</a><h1>ORDER &amp; CHAOS</h1></div>
+  <div class="status"><span id="statusText">秩序の番</span></div>
+  <div class="legend"><b>秩序</b>＝同色がちょうど5つ並べば勝ち（6連は無効）。<b>混沌</b>＝盤を埋めて5連を作らせなければ勝ち。どちらの番でも置く色は自由。</div>
+  <div class="pick">置く色:
+    <button class="sw C active" id="swC" type="button"><i></i></button>
+    <button class="sw M" id="swM" type="button"><i></i></button>
+  </div>
+  <div class="board-wrap"><div id="board" class="board"></div></div>
+  <div class="msg" id="msg">空マスをクリックで選択中の色を配置</div>
+  <div class="controls">
+    <button id="btnReset" type="button" class="b reset">RESET</button>
+    <button id="btnMute" type="button" class="b" aria-label="サウンド切替">🔊</button>
+  </div>
+  <div id="winBanner" class="win-banner" aria-hidden="true"></div>
+
+<script>
+"use strict";
+const N=6, NEED=5;
+let board, turn, pickColor, gameOver, scores, orderSeat;
+// 非対称ゲームのため担当を毎局交代しマッチ単位で公平化（席: S1=蒼席 / S2=紫席）
+function otherSeat(s){ return s==="S1"?"S2":"S1"; }
+function seatName(s){ return s==="S1"?"蒼席":"紫席"; }
+function roleSeat(role){ return role==="O"?orderSeat:otherSeat(orderSeat); }
+const boardEl=document.getElementById("board");
+const statusEl=document.getElementById("statusText");
+const msgEl=document.getElementById("msg");
+const swC=document.getElementById("swC"), swM=document.getElementById("swM");
+const winBannerEl=document.getElementById("winBanner");
+const btnReset=document.getElementById("btnReset"), btnMute=document.getElementById("btnMute");
+let muted=false; const cellEls=[];
+
+let audioCtx=null;
+function getCtx(){try{if(!audioCtx){const A=window.AudioContext||window.webkitAudioContext;if(!A)return null;audioCtx=new A();}if(audioCtx.state==="suspended")audioCtx.resume();return audioCtx;}catch(e){return null;}}
+function bell(freq,dur,gain,when){
+  if(muted)return;const ctx=getCtx();if(!ctx)return;
+  const t0=ctx.currentTime+(when||0);const out=ctx.createGain();out.gain.value=gain;out.connect(ctx.destination);
+  for(const [ra,vo,dd] of [[1,1,1],[2,0.45,0.7],[2.76,0.3,0.55],[3.76,0.18,0.42],[5.4,0.11,0.3]]){
+    const o=ctx.createOscillator(),g=ctx.createGain();o.type="sine";o.frequency.value=freq*ra;o.detune.value=Math.random()*6-3;
+    const pd=Math.max(0.08,dur*dd);g.gain.setValueAtTime(0.0001,t0);g.gain.exponentialRampToValueAtTime(vo,t0+0.004);g.gain.exponentialRampToValueAtTime(0.0001,t0+pd);
+    o.connect(g).connect(out);o.start(t0);o.stop(t0+pd+0.05);
+  }
+}
+function sfxPlace(){try{bell(1244.51,0.55,0.12,0);}catch(e){}}
+function sfxWin(c){try{const base=c==="C"?659.25:587.33;[0,4,7,12,16].forEach((s,i)=>bell(base*Math.pow(2,s/12),1.7-i*0.12,0.14,i*0.1));}catch(e){}}
+
+function build(){
+  boardEl.innerHTML=""; cellEls.length=0;
+  for(let r=0;r<N;r++){const row=[];for(let c=0;c<N;c++){
+    const cell=document.createElement("div");cell.className="c";
+    const g=document.createElement("div");g.className="gem";cell.appendChild(g);
+    cell.addEventListener("click",()=>onClick(r,c));
+    boardEl.appendChild(cell);row.push(cell);
+  }cellEls.push(row);}
+}
+function init(){
+  board=Array.from({length:N},()=>Array(N).fill(null));
+  turn="O"; pickColor="C"; gameOver=false;
+  if(!scores){ scores={S1:0,S2:0}; orderSeat="S1"; }
+  else { orderSeat=otherSeat(orderSeat); }   // 毎局 担当交代
+  setPick("C"); hideBanner(); render(null);
+}
+function inb(r,c){return r>=0&&r<N&&c>=0&&c<N;}
+// 「ちょうど5」の同色極大ランを探す（6連は無効）
+function exactFive(){
+  const dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const v=board[r][c]; if(!v) continue;
+    for(const [dr,dc] of dirs){
+      const pr=r-dr, pc=c-dc;
+      if(inb(pr,pc)&&board[pr][pc]===v) continue;     // ラン先頭のみ起点に
+      let len=0, cells=[]; let rr=r, cc=c;
+      while(inb(rr,cc)&&board[rr][cc]===v){ cells.push([rr,cc]); len++; rr+=dr; cc+=dc; }
+      if(len===5) return cells;                        // 極大ランがちょうど5
+    }
+  }
+  return null;
+}
+function boardFull(){ return board.every(row=>row.every(v=>v!==null)); }
+function setPick(col){ pickColor=col; swC.classList.toggle("active",col==="C"); swM.classList.toggle("active",col==="M"); }
+function onClick(r,c){
+  if(gameOver) return;
+  if(!inb(r,c)||board[r][c]!==null) return;
+  board[r][c]=pickColor; sfxPlace();
+  const five=exactFive();
+  if(five){ finishGame("O",five); return; }            // 5連成立 → 秩序の勝ち
+  if(boardFull()){ finishGame("X",null); return; }      // 埋まって5連なし → 混沌の勝ち
+  turn = turn==="O"?"X":"O";
+  render(null);
+}
+function finishGame(winner,cells){
+  gameOver=true;
+  const ws=roleSeat(winner);                 // 勝った役を担っていた席
+  scores[ws]++;
+  const roleJP = winner==="O"?"秩序":"混沌";
+  statusEl.textContent = seatName(ws)+"の勝ち！（"+roleJP+"）";
+  sfxWin(ws==="S1"?"C":"M");
+  showBanner(seatName(ws),"勝ち", ws==="S1"?"fx-C":"fx-M");
+  render(cells);
+}
+function showBanner(who,big,cls){
+  winBannerEl.innerHTML='<div class="who">'+who+'</div><div class="big">'+big+'</div>';
+  winBannerEl.classList.remove("fx-C","fx-M","show");
+  void winBannerEl.offsetWidth; winBannerEl.classList.add(cls,"show");
+}
+function hideBanner(){ winBannerEl.classList.remove("show","fx-C","fx-M"); }
+function render(winCells){
+  const ws=new Set((winCells||[]).map(([r,c])=>r+","+c));
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const cell=cellEls[r][c], g=cell.querySelector(".gem"), v=board[r][c];
+    cell.classList.toggle("win", ws.has(r+","+c));
+    g.className="gem"+(v?(" "+v+" show"):"");
+  }
+  if(!gameOver){
+    const ts=roleSeat(turn), roleJP=turn==="O"?"秩序":"混沌";
+    statusEl.textContent = seatName(ts)+"（"+roleJP+"）の番";
+  }
+  const map = "この局: "+seatName(orderSeat)+"=秩序 / "+seatName(otherSeat(orderSeat))+"=混沌（毎局交代）";
+  msgEl.textContent = gameOver
+    ? (map+"　｜　蒼席 "+scores.S1+" 勝 ・ 紫席 "+scores.S2+" 勝")
+    : (map+"　｜　空マスをクリックで選択中の色を配置");
+}
+swC.addEventListener("click",()=>setPick("C"));
+swM.addEventListener("click",()=>setPick("M"));
+btnReset.addEventListener("click",init);
+btnMute.addEventListener("click",()=>{ muted=!muted; btnMute.textContent=muted?"🔇":"🔊"; });
+document.addEventListener("keydown",(e)=>{const k=e.key.toLowerCase();
+  if(k==="r")init(); else if(k==="m"){muted=!muted;btnMute.textContent=muted?"🔇":"🔊";}
+  else if(k==="1")setPick("C"); else if(k==="2")setPick("M");});
+build();
+init();
+</script>
+</body>
+</html>
