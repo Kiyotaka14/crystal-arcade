@@ -82,6 +82,11 @@
     background: var(--glass); border: 1px solid var(--glass-line);
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
   }
+  .setup .steps {
+    font-size: 13px; font-weight: 700; letter-spacing: .04em; color: #bcd6f0; text-align: center;
+    line-height: 1.7; padding: 8px 14px; border-radius: 12px;
+    background: rgba(78,200,255,.07); border: 1px solid rgba(120,210,255,.2);
+  }
   .setup .srow { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; justify-content: center; }
   .setup label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; letter-spacing: .12em; color: #9fb9d4; }
   .setup input {
@@ -191,6 +196,7 @@
   </header>
 
   <section class="setup" id="setup">
+    <div class="steps">① 名前を入力（空欄でもOK）　② 勝利条件を選ぶ　③ ゲームを選んで対戦！</div>
     <div class="srow">
       <label>プレイヤー1<input id="p1" type="text" maxlength="12" placeholder="プレイヤー1" autocomplete="off"></label>
       <span class="vs">VS</span>
